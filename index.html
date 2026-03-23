@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OB-Xd Web Synthesizer</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="synth-container">
+        <!-- Header -->
+        <div id="synth-header">
+            <div class="logo">
+                <span class="logo-brand">OBERHEIM</span>
+                <span class="logo-model">OB-Xd</span>
+            </div>
+            <div class="header-display">
+                <div id="voice-display">POLY 8</div>
+                <div id="preset-display">Init Patch</div>
+            </div>
+            <div class="header-controls">
+                <button id="btn-prev-preset" class="preset-btn">&lt;</button>
+                <button id="btn-next-preset" class="preset-btn">&gt;</button>
+                <select id="preset-select"></select>
+            </div>
+        </div>
+
+        <!-- Main Panel -->
+        <div id="synth-panel">
+
+            <!-- Voice Mode Section -->
+            <div class="section" id="section-voice">
+                <div class="section-label">VOICE</div>
+                <div class="control-group">
+                    <div class="button-row">
+                        <button class="mode-btn active" data-voice="poly">POLY</button>
+                        <button class="mode-btn" data-voice="mono">MONO</button>
+                        <button class="mode-btn" data-voice="unison">UNI</button>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="voiceDetune" data-min="0" data-max="1" data-value="0.15">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>DETUNE</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="portamento" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>PORTA</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="masterVolume" data-min="0" data-max="1" data-value="0.7">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>VOLUME</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oscillator 1 -->
+            <div class="section" id="section-osc1">
+                <div class="section-label">OSC 1</div>
+                <div class="control-group">
+                    <div class="button-row">
+                        <button class="wave-btn active" data-osc="1" data-wave="sawtooth">SAW</button>
+                        <button class="wave-btn" data-osc="1" data-wave="square">SQR</button>
+                        <button class="wave-btn" data-osc="1" data-wave="triangle">TRI</button>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc1Octave" data-min="-2" data-max="2" data-value="0" data-step="1">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>OCTAVE</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc1Detune" data-min="-1" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>DETUNE</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc1PW" data-min="0" data-max="1" data-value="0.5">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>PW</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc1Level" data-min="0" data-max="1" data-value="0.8">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>LEVEL</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oscillator 2 -->
+            <div class="section" id="section-osc2">
+                <div class="section-label">OSC 2</div>
+                <div class="control-group">
+                    <div class="button-row">
+                        <button class="wave-btn active" data-osc="2" data-wave="sawtooth">SAW</button>
+                        <button class="wave-btn" data-osc="2" data-wave="square">SQR</button>
+                        <button class="wave-btn" data-osc="2" data-wave="triangle">TRI</button>
+                        <button class="wave-btn" data-osc="2" data-wave="noise">NOISE</button>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc2Octave" data-min="-2" data-max="2" data-value="0" data-step="1">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>OCTAVE</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc2Detune" data-min="-1" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>DETUNE</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc2PW" data-min="0" data-max="1" data-value="0.5">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>PW</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc2Level" data-min="0" data-max="1" data-value="0.5">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>LEVEL</label>
+                        </div>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="osc2Sync" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>SYNC</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="oscCross" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>X-MOD</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="section" id="section-filter">
+                <div class="section-label">FILTER</div>
+                <div class="control-group">
+                    <div class="button-row">
+                        <button class="filter-btn active" data-filter="lowpass">LP</button>
+                        <button class="filter-btn" data-filter="bandpass">BP</button>
+                        <button class="filter-btn" data-filter="highpass">HP</button>
+                        <button class="filter-btn" data-filter="notch">NOTCH</button>
+                    </div>
+                    <div class="button-row">
+                        <button class="slope-btn active" data-slope="12">12dB</button>
+                        <button class="slope-btn" data-slope="24">24dB</button>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob large" data-param="filterCutoff" data-min="20" data-max="20000" data-value="8000" data-log="true">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>CUTOFF</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob large" data-param="filterResonance" data-min="0" data-max="30" data-value="1">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>RESO</label>
+                        </div>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="filterEnvAmount" data-min="-1" data-max="1" data-value="0.3">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>ENV AMT</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="filterKeyTrack" data-min="0" data-max="1" data-value="0.5">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>KEY TRK</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="filterVelocity" data-min="0" data-max="1" data-value="0.3">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>VEL</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Envelope -->
+            <div class="section" id="section-filter-env">
+                <div class="section-label">FILTER ENV</div>
+                <div class="control-group">
+                    <div class="envelope-display" id="filter-env-display">
+                        <canvas width="200" height="80"></canvas>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="filterAttack" data-min="0.001" data-max="5" data-value="0.01" data-log="true">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>A</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="filterDecay" data-min="0.001" data-max="5" data-value="0.3" data-log="true">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>D</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="filterSustain" data-min="0" data-max="1" data-value="0.5">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>S</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="filterRelease" data-min="0.001" data-max="10" data-value="0.5" data-log="true">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>R</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amp Envelope -->
+            <div class="section" id="section-amp-env">
+                <div class="section-label">AMP ENV</div>
+                <div class="control-group">
+                    <div class="envelope-display" id="amp-env-display">
+                        <canvas width="200" height="80"></canvas>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="ampAttack" data-min="0.001" data-max="5" data-value="0.01" data-log="true">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>A</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="ampDecay" data-min="0.001" data-max="5" data-value="0.3" data-log="true">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>D</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="ampSustain" data-min="0" data-max="1" data-value="0.7">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>S</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="ampRelease" data-min="0.001" data-max="10" data-value="0.5" data-log="true">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>R</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LFO Section -->
+            <div class="section" id="section-lfo">
+                <div class="section-label">LFO</div>
+                <div class="control-group">
+                    <div class="button-row">
+                        <button class="lfo-wave-btn active" data-lfo-wave="sine">SIN</button>
+                        <button class="lfo-wave-btn" data-lfo-wave="triangle">TRI</button>
+                        <button class="lfo-wave-btn" data-lfo-wave="sawtooth">SAW</button>
+                        <button class="lfo-wave-btn" data-lfo-wave="square">SQR</button>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="lfoRate" data-min="0.05" data-max="30" data-value="3" data-log="true">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>RATE</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="lfoDelay" data-min="0" data-max="3" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>DELAY</label>
+                        </div>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="lfoToPitch" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>PITCH</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="lfoToFilter" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>FILTER</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="lfoToPW" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>PW</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="lfoToAmp" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>AMP</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Effects Section -->
+            <div class="section" id="section-fx">
+                <div class="section-label">EFFECTS</div>
+                <div class="control-group">
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="chorusRate" data-min="0.1" data-max="5" data-value="1.2">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>CHO RATE</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="chorusDepth" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>CHO DEPT</label>
+                        </div>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="reverbMix" data-min="0" data-max="1" data-value="0.15">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>REVERB</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="reverbDecay" data-min="0.1" data-max="5" data-value="2">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>REV DEC</label>
+                        </div>
+                    </div>
+                    <div class="knob-row">
+                        <div class="knob-container">
+                            <div class="knob" data-param="delayTime" data-min="0.05" data-max="1" data-value="0.3">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>DLY TIME</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="delayFeedback" data-min="0" data-max="0.9" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>DLY FB</label>
+                        </div>
+                        <div class="knob-container">
+                            <div class="knob" data-param="delayMix" data-min="0" data-max="1" data-value="0">
+                                <div class="knob-indicator"></div>
+                            </div>
+                            <label>DLY MIX</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Keyboard -->
+        <div id="keyboard-container">
+            <div id="octave-controls">
+                <button id="octave-down">OCT -</button>
+                <span id="octave-display">C3</span>
+                <button id="octave-up">OCT +</button>
+            </div>
+            <div id="keyboard"></div>
+        </div>
+
+        <!-- Footer -->
+        <div id="synth-footer">
+            <span>OB-Xd Web &bull; Use computer keyboard (A-L) or click keys &bull; MIDI supported</span>
+            <span id="midi-status">MIDI: Not connected</span>
+        </div>
+    </div>
+
+    <script src="js/synth-engine.js"></script>
+    <script src="js/synth-ui.js"></script>
+    <script src="js/presets.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
