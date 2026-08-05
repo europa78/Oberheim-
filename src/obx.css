@@ -1,0 +1,1273 @@
+/* ===========================================================================
+   OB-X — front panel stylesheet
+   ---------------------------------------------------------------------------
+   Everything is drawn with gradients, shadows and system fonts. No images,
+   no @import, no web fonts, no data URIs.
+
+   Sizing model
+   ------------
+   A single root unit `--u` is derived from the viewport with clamp(). All
+   instrument geometry is expressed as `calc(<n> * var(--u))`, where <n> is a
+   "design pixel" measured off the reference photograph (the instrument is
+   1800 design px wide). At >=1820px viewport --u pins to 1px and the panel
+   centres; at <=~910px it pins to 0.5px and the page scrolls horizontally
+   rather than reflowing the instrument into something unrecognisable.
+
+   Sections
+   --------
+   01  Reset, page chrome, theming
+   02  Root metrics and palette
+   03  Instrument shell — cheeks, chassis, brand strip
+   04  Control surface grid (grid-template-areas)
+   05  Sub-panels — face, bevel, panel names
+   06  Rows, columns and captions
+   07  Knob widget
+   08  Rocker switch widget + LEDs
+   09  Panel-specific layout
+   10  Programmer LCD
+   11  Performance panel
+   12  Keybed
+   13  Boot overlay, tooltip, accessibility
+   =========================================================================== */
+
+
+/* ===========================================================================
+   01  Reset, page chrome, theming
+   =========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+:root {
+  /* Page backdrop only — the instrument itself never changes appearance. */
+  --page-bg-a: #e4e6ea;
+  --page-bg-b: #c6cad2;
+  --page-fg: #1b1e24;
+  --page-vignette: rgba(0, 0, 0, .18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page-bg-a: #14161a;
+    --page-bg-b: #06070a;
+    --page-fg: #e6e9ef;
+    --page-vignette: rgba(0, 0, 0, .55);
+  }
+}
+
+:root[data-theme="light"] {
+  --page-bg-a: #e4e6ea;
+  --page-bg-b: #c6cad2;
+  --page-fg: #1b1e24;
+  --page-vignette: rgba(0, 0, 0, .18);
+}
+
+:root[data-theme="dark"] {
+  --page-bg-a: #14161a;
+  --page-bg-b: #06070a;
+  --page-fg: #e6e9ef;
+  --page-vignette: rgba(0, 0, 0, .55);
+}
+
+html { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100%;
+  padding: calc(24 * var(--u)) 0;
+  color: var(--page-fg);
+  background:
+    radial-gradient(120% 90% at 50% 0%, transparent 40%, var(--page-vignette) 100%),
+    linear-gradient(178deg, var(--page-bg-a), var(--page-bg-b));
+  background-attachment: fixed;
+  font-family: var(--face);
+  overflow-x: auto;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Global drag affordance — set by the knob widget while a pointer drag runs. */
+body.dragging,
+body.dragging * {
+  cursor: ns-resize !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+
+/* ===========================================================================
+   02  Root metrics and palette
+   =========================================================================== */
+
+:root {
+  /* 1800 design px wide instrument; 0.05494vw ~= 100vw / 1820 (scrollbar slack) */
+  --u: clamp(0.5px, 0.05494vw, 1px);
+
+  /* Type stacks — system only. */
+  --face: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", system-ui, sans-serif;
+  --face-brand: Georgia, "Times New Roman", "Liberation Serif", serif;
+  --face-lcd: "DejaVu Sans", "Segoe UI", Tahoma, Verdana, sans-serif;
+
+  /* Cabinet */
+  --wood-1: #8a5a31;
+  --wood-2: #6b4224;
+  --wood-3: #4e2f18;
+  --black-1: #26262a;
+  --black-2: #17171a;
+  --black-3: #101012;
+
+  /* Sub-panel face (cool light blue-grey brushed metal) */
+  --face-hi: #d2d9e3;
+  --face-mid: #c2cbd9;
+  --face-lo: #b4becf;
+  --face-ink: #191d24;
+
+  /* Knobs / caps */
+  --cap-bg: #0d0e10;
+  --cap-ink: #f1f2f4;
+
+  /* Panel geometry */
+  --gutter: calc(13 * var(--u));
+  --panel-pad-x: calc(11 * var(--u));
+  --panel-pad-t: calc(13 * var(--u));
+}
+
+
+/* ===========================================================================
+   03  Instrument shell — cheeks, chassis, brand strip
+   =========================================================================== */
+
+.obx {
+  display: grid;
+  grid-template-columns: calc(40 * var(--u)) minmax(0, 1fr) calc(40 * var(--u));
+  width: calc(1800 * var(--u));
+  min-width: calc(1800 * var(--u));
+  margin: 0 auto;
+  border-radius: calc(6 * var(--u));
+  filter: drop-shadow(0 calc(14 * var(--u)) calc(26 * var(--u)) rgba(0, 0, 0, .45));
+}
+
+/* --- wood end cheeks ----------------------------------------------------- */
+.cheek {
+  border-radius: calc(5 * var(--u));
+  background:
+    repeating-linear-gradient(91deg,
+      rgba(0, 0, 0, .20) 0 1px,
+      rgba(255, 255, 255, .045) 1px 3px,
+      rgba(0, 0, 0, .10) 3px 6px,
+      rgba(255, 255, 255, .02) 6px 11px),
+    repeating-linear-gradient(87deg,
+      rgba(0, 0, 0, .10) 0 5px,
+      transparent 5px 17px),
+    linear-gradient(102deg, var(--wood-2) 0%, var(--wood-1) 26%, var(--wood-3) 62%, #7d4e2a 100%);
+  box-shadow:
+    inset 0 calc(2 * var(--u)) 0 rgba(255, 255, 255, .16),
+    inset 0 calc(-3 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, .5),
+    inset calc(-2 * var(--u)) 0 calc(4 * var(--u)) rgba(0, 0, 0, .35);
+}
+
+.cheek-left  { box-shadow: inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,.16), inset calc(-3 * var(--u)) 0 calc(7 * var(--u)) rgba(0,0,0,.45); }
+.cheek-right { box-shadow: inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,.16), inset calc(3 * var(--u)) 0 calc(7 * var(--u)) rgba(0,0,0,.45); }
+
+/* --- matte black textured chassis ---------------------------------------- */
+.chassis {
+  position: relative;
+  padding: calc(26 * var(--u)) calc(24 * var(--u)) calc(20 * var(--u));
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(255, 255, 255, .016) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-45deg,
+      rgba(0, 0, 0, .28) 0 1px, transparent 1px 3px),
+    radial-gradient(140% 100% at 50% -10%, rgba(255, 255, 255, .07), transparent 60%),
+    linear-gradient(180deg, var(--black-1) 0%, var(--black-2) 38%, var(--black-3) 100%);
+  box-shadow:
+    inset 0 calc(1 * var(--u)) 0 rgba(255, 255, 255, .10),
+    inset 0 calc(-2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .7);
+}
+
+/* --- brand strip --------------------------------------------------------- */
+.brand-strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(10 * var(--u));
+  height: calc(58 * var(--u));
+  padding: 0 calc(18 * var(--u)) 0 0;
+}
+
+.brand-mark {
+  display: block;
+  width: calc(56 * var(--u));
+  height: calc(34 * var(--u));
+}
+
+.brand-glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #f4f5f7;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .8));
+}
+
+.brand-name {
+  font-family: var(--face-brand);
+  font-weight: 700;
+  font-size: calc(40 * var(--u));
+  line-height: 1;
+  letter-spacing: calc(0.4 * var(--u));
+  color: #fafbfc;
+  text-shadow:
+    0 calc(1 * var(--u)) 0 rgba(0, 0, 0, .8),
+    0 calc(3 * var(--u)) calc(7 * var(--u)) rgba(0, 0, 0, .6);
+}
+
+
+/* ===========================================================================
+   04  Control surface grid
+   ---------------------------------------------------------------------------
+   MASTER, CONTROL and MODULATION are full-height columns (they span both
+   rows, exactly as on the real instrument); OSCILLATORS, FILTER and
+   ENVELOPES sit on the top row with KEYBOARD and PROGRAMMER beneath them.
+   Column 5 exists purely so PROGRAMMER can start part-way under
+   OSCILLATORS, matching the photograph.
+   =========================================================================== */
+
+.control-surface {
+  position: relative;
+  display: grid;
+  grid-template-columns: 110fr 108fr 175fr 137fr 58fr 203fr 220fr;
+  grid-template-rows:
+    minmax(calc(210 * var(--u)), auto)
+    minmax(calc(124 * var(--u)), auto);
+  grid-template-areas:
+    "master control modulation oscillators oscillators filter     envelopes"
+    "master control modulation keyboard    programmer  programmer programmer";
+  gap: var(--gutter);
+}
+
+.panel-master      { grid-area: master; }
+.panel-control     { grid-area: control; }
+.panel-modulation  { grid-area: modulation; }
+.panel-oscillators { grid-area: oscillators; }
+.panel-filter      { grid-area: filter; }
+.panel-envelopes   { grid-area: envelopes; }
+.panel-keyboard    { grid-area: keyboard; }
+.panel-programmer  { grid-area: programmer; }
+
+
+/* ===========================================================================
+   05  Sub-panels — brushed light blue-grey faces
+   =========================================================================== */
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid #23262c;
+  border-radius: calc(3 * var(--u));
+  background:
+    /* fine vertical brushing */
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, .050) 0 1px,
+      rgba(0, 0, 0, .030) 1px 2px,
+      transparent 2px 4px),
+    /* broad sheen */
+    linear-gradient(163deg,
+      var(--face-hi) 0%,
+      var(--face-mid) 34%,
+      var(--face-lo) 63%,
+      #c7cfdb 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .65),
+    inset 0 -1px 0 rgba(0, 0, 0, .30),
+    inset 1px 0 0 rgba(255, 255, 255, .30),
+    inset -1px 0 0 rgba(0, 0, 0, .20),
+    0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, .55);
+}
+
+.panel-inner {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  padding: var(--panel-pad-t) var(--panel-pad-x) calc(4 * var(--u));
+  min-width: 0;
+}
+
+.panel-name {
+  flex: 0 0 auto;
+  padding: calc(3 * var(--u)) 0 calc(9 * var(--u));
+  text-align: center;
+  font-size: calc(16 * var(--u));
+  font-weight: 400;
+  font-stretch: condensed;
+  letter-spacing: calc(2.4 * var(--u));
+  color: #fdfdfe;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, .55),
+    0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .40);
+}
+
+
+/* ===========================================================================
+   06  Rows, columns and captions
+   =========================================================================== */
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(9 * var(--u));
+}
+
+.row.knobs {
+  width: 100%;
+  justify-content: space-around;
+  gap: calc(4 * var(--u));
+}
+
+.row.knobs.single { justify-content: center; }
+
+.row.switches {
+  gap: calc(8 * var(--u));
+  align-items: flex-end;
+}
+
+.row.pair {
+  gap: calc(7 * var(--u));
+  align-items: flex-end;
+}
+
+.row.progs { gap: calc(9 * var(--u)); }
+
+.ctl { flex: 0 0 auto; }
+
+/* Small dark captions printed straight onto the panel face. */
+.col-cap,
+.group-cap,
+.group-sub,
+.osc-num {
+  font-size: calc(11 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.9 * var(--u));
+  color: #1e232b;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .45);
+}
+
+.col-cap {
+  font-size: calc(14 * var(--u));
+  letter-spacing: calc(1.3 * var(--u));
+}
+
+.group-cap { font-size: calc(9.5 * var(--u)); }
+
+.osc-num {
+  font-size: calc(15 * var(--u));
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+/* "— TRIANGLE —" style sub-caption with rules either side. */
+.group-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+  width: 100%;
+  font-size: calc(9 * var(--u));
+}
+
+.group-sub::before,
+.group-sub::after {
+  content: "";
+  flex: 1 1 auto;
+  min-width: calc(8 * var(--u));
+  height: 1px;
+  background: rgba(24, 30, 40, .55);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .4);
+}
+
+.sw-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(4 * var(--u));
+}
+
+/* Envelope panel titles (this panel carries no .panel-name). */
+.env-title {
+  font-size: calc(15 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(2 * var(--u));
+  color: #fdfdfe;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .5), 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .35);
+}
+
+.env-title.top { margin-bottom: calc(-2 * var(--u)); }
+.env-title.bottom { margin-top: calc(-1 * var(--u)); }
+
+
+/* ===========================================================================
+   07  Knob widget
+   ---------------------------------------------------------------------------
+   .knob-ctl > [.led] + .cap + .knob > (.knob-ticks > i.tick) + .knob-body >
+   .knob-pointer
+
+   Ticks: JS writes an inline `transform: rotate(Ndeg) translateY(-50%)`, so
+   the ring radius has to come from transform-origin. With the tick centred on
+   the knob (left/top 50%), margin-top:-R and transform-origin:50% R, the
+   composite maps each tick onto a circle of radius R about the knob centre.
+   =========================================================================== */
+
+.knob-ctl {
+  /* unitless design-pixel metrics, multiplied by --u below */
+  --kb: 44;    /* knob body diameter   */
+  --kr: 30;    /* tick ring radius     */
+  --kbox: 66;  /* widget box           */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  width: calc(var(--kbox) * var(--u));
+}
+
+.knob-ctl.size-sm { --kb: 34; --kr: 23; --kbox: 52; }
+.knob-ctl.size-xs { --kb: 26; --kr: 18; --kbox: 40; }
+
+/* --- black label plate --------------------------------------------------- */
+.cap {
+  padding: calc(2 * var(--u)) calc(5 * var(--u));
+  border-radius: calc(1.5 * var(--u));
+  background: linear-gradient(180deg, #26282c 0%, var(--cap-bg) 45%, #060607 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .18),
+    0 1px 0 rgba(255, 255, 255, .45),
+    0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .45);
+  color: var(--cap-ink);
+  font-size: calc(8 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.5 * var(--u));
+  line-height: 1.35;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cap.tiny {
+  font-size: calc(7 * var(--u));
+  padding: calc(1.5 * var(--u)) calc(4 * var(--u));
+}
+
+.knob-led { margin-bottom: calc(1 * var(--u)); }
+
+/* --- knob proper --------------------------------------------------------- */
+.knob {
+  position: relative;
+  width: calc(var(--kbox) * var(--u));
+  height: calc(var(--kbox) * var(--u));
+  border-radius: 50%;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.knob-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.knob-ticks .tick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(1.8 * var(--u));
+  height: calc(5 * var(--u));
+  margin-left: calc(-0.9 * var(--u));
+  margin-top: calc(var(--kr) * var(--u) * -1);
+  transform-origin: 50% calc(var(--kr) * var(--u));
+  border-radius: calc(1 * var(--u));
+  background: rgba(22, 26, 33, .78);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .40);
+}
+
+.knob-body {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--kb) * var(--u));
+  height: calc(var(--kb) * var(--u));
+  margin-left: calc(var(--kb) * var(--u) / -2);
+  margin-top: calc(var(--kb) * var(--u) / -2);
+  border-radius: 50%;
+  background:
+    /* top-left specular highlight */
+    radial-gradient(circle at 33% 24%,
+      rgba(255, 255, 255, .34) 0%,
+      rgba(255, 255, 255, .10) 26%,
+      rgba(255, 255, 255, 0) 54%),
+    /* fluted skirt */
+    repeating-conic-gradient(from 0deg,
+      rgba(255, 255, 255, .055) 0deg 3.6deg,
+      rgba(0, 0, 0, .16) 3.6deg 7.2deg),
+    /* moulded body */
+    radial-gradient(circle at 50% 42%, #4b4744 0%, #322e2b 46%, #201d1b 72%, #0e0d0d 100%);
+  box-shadow:
+    inset 0 calc(1.5 * var(--u)) calc(2 * var(--u)) rgba(255, 255, 255, .14),
+    inset 0 calc(-3 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .65),
+    inset 0 0 0 1px rgba(0, 0, 0, .55),
+    0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .55);
+}
+
+/* JS rotates this element; it is the full body box so the default
+   50%/50% transform-origin is the knob centre. */
+.knob-pointer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.knob-pointer::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(var(--kb) * var(--u) * 0.055);
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: calc(var(--kb) * var(--u) * 0.105) solid transparent;
+  border-right: calc(var(--kb) * var(--u) * 0.105) solid transparent;
+  border-bottom: calc(var(--kb) * var(--u) * 0.185) solid #f5f4f0;
+  filter: drop-shadow(0 1px calc(1 * var(--u)) rgba(0, 0, 0, .75));
+}
+
+
+/* ===========================================================================
+   08  Rocker switch widget + LEDs
+   =========================================================================== */
+
+.sw-ctl {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--u));
+  width: calc(34 * var(--u));
+}
+
+.sw-ctl.wide { width: calc(46 * var(--u)); }
+
+/* tiny FIL / AMP style captions printed above the cap */
+.led-caps {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  padding: 0 calc(2 * var(--u));
+  font-size: calc(6.5 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.3 * var(--u));
+  color: #1d222a;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .45);
+  white-space: nowrap;
+}
+
+button.rocker {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: calc(44 * var(--u));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: calc(2.5 * var(--u));
+  cursor: pointer;
+  overflow: visible;
+  font: inherit;
+  color: inherit;
+  background:
+    linear-gradient(180deg,
+      #35353a 0%,
+      #1d1d21 10%,
+      #131316 46%,
+      #0c0c0e 52%,
+      #17171a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .22),
+    inset 0 calc(-2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .75),
+    inset calc(1 * var(--u)) 0 calc(2 * var(--u)) rgba(255, 255, 255, .05),
+    0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .6);
+}
+
+button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
+
+.sw-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(3 * var(--u));
+  font-size: calc(8 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.4 * var(--u));
+  line-height: 1;
+  color: #eceded;
+  text-transform: uppercase;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .9);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.leds {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(15 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(7 * var(--u));
+  pointer-events: none;
+}
+
+.leds.n1 { gap: 0; }
+
+/* glossy lower face / seam across the bottom third of the cap */
+.rocker-face {
+  position: absolute;
+  left: calc(3 * var(--u));
+  right: calc(3 * var(--u));
+  bottom: calc(3 * var(--u));
+  height: calc(17 * var(--u));
+  border-radius: calc(1.5 * var(--u));
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, .34) 0%,
+    rgba(255, 255, 255, .09) 14%,
+    rgba(255, 255, 255, .02) 40%,
+    rgba(0, 0, 0, .38) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .40);
+  pointer-events: none;
+}
+
+/* --- LEDs ---------------------------------------------------------------- */
+.led {
+  display: block;
+  flex: 0 0 auto;
+  width: calc(6 * var(--u));
+  height: calc(6 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #7c2320 0%, #45100e 62%, #250807 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, .70),
+    inset 0 calc(-1 * var(--u)) calc(1 * var(--u)) rgba(0, 0, 0, .6);
+}
+
+.led-amber {
+  background: radial-gradient(circle at 36% 30%, #6f5b18 0%, #3a2d09 62%, #1e1706 100%);
+}
+
+.led.on {
+  background: radial-gradient(circle at 38% 32%, #fff2ef 0%, #ff5136 26%, #f01508 55%, #a90703 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 0, 0, .5),
+    0 0 calc(3 * var(--u)) calc(1.4 * var(--u)) rgba(255, 48, 24, .90),
+    0 0 calc(9 * var(--u)) calc(3.5 * var(--u)) rgba(255, 36, 12, .42),
+    0 0 calc(18 * var(--u)) calc(6 * var(--u)) rgba(255, 40, 16, .18);
+}
+
+.led-amber.on {
+  background: radial-gradient(circle at 38% 32%, #fffce9 0%, #ffd44f 28%, #ffb100 58%, #b06d00 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(110, 66, 0, .5),
+    0 0 calc(3 * var(--u)) calc(1.4 * var(--u)) rgba(255, 190, 40, .85),
+    0 0 calc(9 * var(--u)) calc(3.5 * var(--u)) rgba(255, 170, 20, .35);
+}
+
+
+/* ===========================================================================
+   09  Panel-specific layout
+   =========================================================================== */
+
+/* --- MASTER / CONTROL (tall left columns) -------------------------------- */
+.panel-master .panel-inner,
+.panel-control .panel-inner {
+  gap: calc(12 * var(--u));
+  justify-content: flex-start;
+}
+
+.panel-master .row.knobs.single,
+.panel-control .row.knobs.single {
+  margin-top: calc(16 * var(--u));
+}
+
+/* --- MODULATION ---------------------------------------------------------- */
+.panel-modulation .panel-inner {
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: calc(4 * var(--u));
+  padding-left: calc(6 * var(--u));
+  padding-right: calc(6 * var(--u));
+}
+
+.mod-col {
+  position: relative;
+  flex: 1 1 0;
+  justify-content: flex-start;
+  gap: calc(11 * var(--u));
+  padding: 0 calc(4 * var(--u));
+}
+
+.mod-col + .mod-col::before {
+  content: "";
+  position: absolute;
+  left: calc(-2 * var(--u));
+  top: calc(22 * var(--u));
+  bottom: calc(-2 * var(--u));
+  width: calc(1.5 * var(--u));
+  border-radius: 1px;
+  background: rgba(20, 25, 33, .60);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, .35);
+}
+
+/* --- OSCILLATORS --------------------------------------------------------- */
+.panel-oscillators .panel-inner { gap: calc(8 * var(--u)); }
+
+.osc-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--u));
+}
+
+.panel-oscillators .row.switches {
+  width: 100%;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: calc(6 * var(--u));
+}
+
+.sw-group.waveform { min-width: calc(80 * var(--u)); }
+.sw-group.xmod .row.pair { align-items: flex-end; }
+
+/* --- FILTER -------------------------------------------------------------- */
+.panel-filter .panel-inner { gap: calc(10 * var(--u)); }
+.panel-filter .row.switches { gap: calc(11 * var(--u)); }
+
+/* --- ENVELOPES ----------------------------------------------------------- */
+.panel-envelopes .panel-inner {
+  gap: calc(7 * var(--u));
+  justify-content: center;
+  padding-bottom: calc(10 * var(--u));
+}
+
+.row.knobs.adsr {
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 calc(6 * var(--u));
+}
+
+/* --- KEYBOARD ------------------------------------------------------------ */
+.panel-keyboard .panel-inner {
+  justify-content: flex-start;
+  padding-top: calc(10 * var(--u));
+}
+
+.panel-keyboard .row.switches { gap: calc(9 * var(--u)); }
+
+/* --- PROGRAMMER ---------------------------------------------------------- */
+.panel-programmer .panel-inner {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(10 * var(--u));
+  padding: calc(10 * var(--u)) calc(14 * var(--u)) calc(2 * var(--u));
+}
+
+.panel-programmer .row.switches.lead,
+.panel-programmer .row.switches.trail {
+  gap: calc(9 * var(--u));
+  align-items: center;
+}
+
+.panel-programmer .row.progs {
+  flex: 1 1 auto;
+  justify-content: space-around;
+  align-items: center;
+}
+
+
+/* ===========================================================================
+   10  Programmer LCD
+   =========================================================================== */
+
+.lcd-block {
+  display: flex;
+  align-items: center;
+  gap: calc(7 * var(--u));
+}
+
+.lcd-knob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--u));
+}
+
+.lcd {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(1 * var(--u));
+  width: calc(118 * var(--u));
+  height: calc(50 * var(--u));
+  padding: calc(3 * var(--u)) calc(5 * var(--u));
+  border-radius: calc(2 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .07), transparent 30%),
+    linear-gradient(180deg, #0a1420 0%, #061019 55%, #030a12 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, .8),
+    inset 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .8),
+    0 1px 0 rgba(255, 255, 255, .35);
+  font-family: var(--face-lcd);
+  color: #a8d8f6;
+  overflow: hidden;
+}
+
+.lcd-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(4 * var(--u));
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.lcd-tag {
+  font-size: calc(6.5 * var(--u));
+  letter-spacing: calc(0.3 * var(--u));
+  color: #5d90b6;
+}
+
+.lcd-tag.right { text-align: right; }
+
+.lcd-text {
+  font-size: calc(12 * var(--u));
+  font-weight: 700;
+  letter-spacing: calc(0.2 * var(--u));
+  color: #cfe9ff;
+  text-shadow: 0 0 calc(4 * var(--u)) rgba(120, 190, 255, .55);
+}
+
+.lcd-text.num { font-size: calc(13 * var(--u)); }
+
+.lcd-name {
+  display: block;
+  font-size: calc(10 * var(--u));
+  color: #9fd0ef;
+  text-shadow: 0 0 calc(3 * var(--u)) rgba(110, 180, 250, .45);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* ===========================================================================
+   11  Performance panel (black, left of the keybed)
+   =========================================================================== */
+
+.lower-deck {
+  display: grid;
+  grid-template-columns: calc(250 * var(--u)) minmax(0, 1fr);
+  align-items: stretch;
+  height: calc(284 * var(--u));
+}
+
+.perf-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(4 * var(--u));
+  padding: calc(12 * var(--u)) calc(10 * var(--u)) calc(8 * var(--u));
+  border-radius: calc(2 * var(--u)) 0 0 calc(2 * var(--u));
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, .014) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #1c1c1f 0%, #131315 55%, #0d0d0f 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+/* Perf panel labels are white-on-black rather than dark-on-metal. */
+.perf-panel .sw-label,
+.perf-cap,
+.perf-btn-cap,
+.perf-panel .group-cap,
+.perf-panel .led-caps,
+.perf-sublabels {
+  color: #ededee;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .9);
+}
+
+/* On the perf panel the legend sits above the cap, not printed on it. */
+.perf-panel .rocker > .sw-label {
+  top: calc(-11 * var(--u));
+  font-size: calc(9 * var(--u));
+}
+
+.perf-panel .sw-ctl { width: calc(30 * var(--u)); }
+.perf-panel button.rocker { height: calc(34 * var(--u)); }
+.perf-panel .leds { top: calc(9 * var(--u)); }
+.perf-panel .rocker-face { height: calc(13 * var(--u)); }
+.perf-panel .led-caps { font-size: calc(7 * var(--u)); }
+
+.perf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(6 * var(--u));
+  width: 100%;
+}
+
+.perf-top { align-items: flex-start; padding-top: calc(9 * var(--u)); }
+
+.perf-cell {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(8 * var(--u));
+}
+
+.perf-cell.perf-lu { gap: calc(10 * var(--u)); }
+
+.perf-cap {
+  font-size: calc(8 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.5 * var(--u));
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.perf-mid {
+  align-items: center;
+  padding: calc(6 * var(--u)) 0;
+}
+
+.perf-mid .perf-cell {
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6 * var(--u));
+}
+
+/* --- bender well --------------------------------------------------------- */
+.bender {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(78 * var(--u));
+  height: calc(86 * var(--u));
+  border-radius: calc(3 * var(--u));
+  background:
+    linear-gradient(180deg, #050506 0%, #0b0b0d 45%, #17171a 100%);
+  box-shadow:
+    inset 0 calc(3 * var(--u)) calc(7 * var(--u)) rgba(0, 0, 0, .95),
+    inset 0 calc(-2 * var(--u)) calc(3 * var(--u)) rgba(255, 255, 255, .08),
+    inset calc(3 * var(--u)) 0 calc(6 * var(--u)) rgba(0, 0, 0, .8),
+    inset calc(-3 * var(--u)) 0 calc(6 * var(--u)) rgba(0, 0, 0, .8),
+    0 1px 0 rgba(255, 255, 255, .10);
+}
+
+.bender-lever {
+  position: absolute;
+  left: calc(-4 * var(--u));
+  right: calc(-4 * var(--u));
+  top: 46%;
+  height: calc(15 * var(--u));
+  border-radius: calc(2 * var(--u));
+  cursor: ew-resize;
+  touch-action: none;
+  background: linear-gradient(180deg, #56565a 0%, #3a3a3e 34%, #232326 68%, #131315 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .32),
+    inset 0 calc(-1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .8),
+    0 calc(3 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, .7);
+}
+
+/* --- bottom groups ------------------------------------------------------- */
+.perf-bot {
+  align-items: flex-end;
+  gap: calc(8 * var(--u));
+  padding-bottom: calc(2 * var(--u));
+}
+
+.perf-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(4 * var(--u));
+}
+
+.perf-group.arp { flex: 1 1 auto; }
+
+.perf-btns {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+}
+
+.perf-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--u));
+}
+
+/* BEND and TRANSPOSE print their legends beneath the buttons. */
+.perf-group.bend .perf-btn,
+.perf-group.transpose .perf-btn { flex-direction: column-reverse; }
+
+.perf-btn-cap {
+  font-size: calc(8 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.3 * var(--u));
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.perf-panel .perf-btn .sw-ctl { width: calc(26 * var(--u)); }
+.perf-panel .perf-btn button.rocker { height: calc(30 * var(--u)); }
+.perf-panel .perf-btn .leds { top: calc(7 * var(--u)); }
+.perf-panel .perf-btn .rocker-face { height: calc(11 * var(--u)); }
+
+/* group headings with rules either side */
+.group-cap.rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+  width: 100%;
+  font-size: calc(8.5 * var(--u));
+  letter-spacing: calc(0.9 * var(--u));
+  white-space: nowrap;
+}
+
+.group-cap.rule::before,
+.group-cap.rule::after {
+  content: "";
+  flex: 1 1 auto;
+  min-width: calc(8 * var(--u));
+  height: calc(1.5 * var(--u));
+  background: #d8d9db;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .8);
+}
+
+.perf-sublabels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: calc(8 * var(--u));
+  font-stretch: condensed;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+
+/* ===========================================================================
+   12  Keybed
+   =========================================================================== */
+
+.keybed {
+  position: relative;
+  height: 100%;
+  padding: calc(6 * var(--u)) calc(6 * var(--u)) calc(8 * var(--u)) 0;
+  background: linear-gradient(180deg, #141416 0%, #0c0c0e 100%);
+  overflow: hidden;
+}
+
+.whites {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: calc(1.2 * var(--u));
+  height: 100%;
+}
+
+.blacks {
+  position: absolute;
+  left: 0;
+  right: calc(6 * var(--u));
+  top: calc(6 * var(--u));
+  bottom: calc(8 * var(--u));
+  pointer-events: none;
+}
+
+.key { touch-action: none; }
+
+.key.white {
+  position: relative;
+  border-radius: 0 0 calc(3 * var(--u)) calc(3 * var(--u));
+  background: linear-gradient(180deg, #e9eae6 0%, #f7f8f5 12%, #fdfdfb 62%, #e6e7e2 96%, #cfd0cb 100%);
+  box-shadow:
+    inset 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, .28),
+    inset calc(-1.5 * var(--u)) 0 calc(2 * var(--u)) rgba(0, 0, 0, .18),
+    inset calc(1 * var(--u)) 0 0 rgba(255, 255, 255, .9),
+    0 calc(3 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .45);
+}
+
+.key.white.down {
+  background: linear-gradient(180deg, #c4c6c2 0%, #dcdeda 14%, #e4e5e1 70%, #cbccc7 100%);
+  box-shadow:
+    inset 0 calc(3 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .45),
+    0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .5);
+  transform: translateY(calc(1.5 * var(--u)));
+}
+
+.key.black {
+  --kw: calc(100% / var(--white-count));
+  position: absolute;
+  top: 0;
+  width: calc(var(--kw) * 0.58);
+  height: 62%;
+  left: calc(var(--slot) * var(--kw) - var(--kw) * 0.29);
+  border-radius: 0 0 calc(2.5 * var(--u)) calc(2.5 * var(--u));
+  background:
+    linear-gradient(180deg, #4a4a4e 0%, #232326 7%, #141416 40%, #0a0a0c 88%, #1c1c1f 100%);
+  box-shadow:
+    inset calc(1.5 * var(--u)) 0 0 rgba(255, 255, 255, .12),
+    inset calc(-1.5 * var(--u)) 0 0 rgba(0, 0, 0, .8),
+    inset 0 calc(-4 * var(--u)) calc(4 * var(--u)) rgba(255, 255, 255, .07),
+    calc(1.5 * var(--u)) calc(4 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .6);
+  pointer-events: auto;
+}
+
+.key.black.down {
+  background: linear-gradient(180deg, #2a2a2d 0%, #131315 30%, #030304 90%);
+  box-shadow:
+    inset 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .9),
+    calc(1 * var(--u)) calc(1.5 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .6);
+  transform: translateY(calc(1.5 * var(--u)));
+}
+
+
+/* ===========================================================================
+   13  Boot overlay, tooltip, accessibility
+   =========================================================================== */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(90% 70% at 50% 30%, rgba(30, 34, 44, .55), transparent 70%),
+    linear-gradient(180deg, #0b0c0f 0%, #050608 100%);
+}
+
+.boot-card {
+  width: min(440px, 100%);
+  padding: 34px 30px 30px;
+  text-align: center;
+  border: 1px solid #2b3038;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), transparent 40%),
+    linear-gradient(180deg, #16181d, #0e1013);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .08);
+  color: #dfe3ea;
+}
+
+.boot-card h1 {
+  margin: 0 0 14px;
+  font-family: var(--face-brand);
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #f6f7f9;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .8);
+}
+
+.boot-card p {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #aab2be;
+}
+
+#boot-btn {
+  display: inline-block;
+  margin: 4px 0 18px;
+  padding: 11px 30px;
+  border: 1px solid #3a4150;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #f2f4f7;
+  background: linear-gradient(180deg, #333a46 0%, #232935 52%, #171c25 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 4px 12px rgba(0, 0, 0, .55);
+}
+
+#boot-btn:hover { background: linear-gradient(180deg, #3d4552 0%, #2a313e 52%, #1c222c 100%); }
+#boot-btn:active { transform: translateY(1px); }
+
+.boot-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #79828f;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, -100%);
+  padding: 4px 9px;
+  border: 1px solid #39424f;
+  border-radius: 5px;
+  background: rgba(12, 15, 20, .94);
+  color: #dde5f0;
+  font-family: var(--face);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .55);
+}
+
+/* --- keyboard accessibility ---------------------------------------------- */
+.knob:focus { outline: none; }
+button.rocker:focus { outline: none; }
+
+.knob:focus-visible,
+button.rocker:focus-visible,
+.bender-lever:focus-visible,
+#boot-btn:focus-visible {
+  outline: calc(2 * var(--u)) solid #66c8ff;
+  outline-offset: calc(2 * var(--u));
+  border-radius: calc(3 * var(--u));
+}
+
+#boot-btn:focus-visible { outline-width: 2px; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

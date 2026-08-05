@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OB-X — Polyphonic Synthesizer</title>
+<link rel="stylesheet" href="src/obx.css">
+</head>
+<body>
+
+<div id="boot" class="boot">
+  <div class="boot-card">
+    <h1>OB-X</h1>
+    <p>Eight&#8209;voice polyphonic synthesizer</p>
+    <button id="boot-btn" type="button">Power On</button>
+    <p class="boot-hint">Play with the computer keyboard (A&#8211;L / W&#8211;P), the on&#8209;screen keys, or any connected MIDI keyboard.</p>
+  </div>
+</div>
+
+<main id="obx" class="obx" hidden>
+  <div class="cheek cheek-left"></div>
+
+  <div class="chassis">
+    <div class="control-surface" id="control-surface"></div>
+
+    <div class="brand-strip">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 24" class="brand-glyph"><path d="M4 12a8 8 0 1 1 16 0 8 8 0 1 1 16 0" /></svg>
+      </span>
+      <span class="brand-name">Oberheim</span>
+    </div>
+
+    <div class="lower-deck">
+      <div class="perf-panel" id="perf-panel"></div>
+      <div class="keybed" id="keybed"></div>
+    </div>
+  </div>
+
+  <div class="cheek cheek-right"></div>
+</main>
+
+<div id="tooltip" class="tooltip" hidden></div>
+
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
