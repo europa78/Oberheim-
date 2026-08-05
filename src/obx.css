@@ -238,9 +238,15 @@ body.dragging * {
 .control-surface {
   position: relative;
   display: grid;
-  grid-template-columns: 110fr 108fr 175fr 137fr 58fr 203fr 220fr;
+  /* MASTER/CONTROL only ever hold two knobs abreast, so they give width back
+     to MODULATION, which needs three equal columns wide enough for the
+     "DESTINATION" captions. Column 5 is a sliver that lets PROGRAMMER start
+     part-way under OSCILLATORS, as in the photograph. */
+  grid-template-columns: 100fr 100fr 200fr 125fr 65fr 195fr 226fr;
+  /* Row proportions follow the photograph (top row ~1.7x the lower row); the
+     minmax() lower bounds hold the ratio while letting content grow. */
   grid-template-rows:
-    minmax(calc(210 * var(--u)), auto)
+    minmax(calc(196 * var(--u)), auto)
     minmax(calc(124 * var(--u)), auto);
   grid-template-areas:
     "master control modulation oscillators oscillators filter     envelopes"
@@ -301,7 +307,7 @@ body.dragging * {
 
 .panel-name {
   flex: 0 0 auto;
-  padding: calc(3 * var(--u)) 0 calc(9 * var(--u));
+  padding: calc(3 * var(--u)) 0 calc(8 * var(--u));
   text-align: center;
   font-size: calc(16 * var(--u));
   font-weight: 400;
@@ -369,8 +375,8 @@ body.dragging * {
 }
 
 .col-cap {
-  font-size: calc(14 * var(--u));
-  letter-spacing: calc(1.3 * var(--u));
+  font-size: calc(12 * var(--u));
+  letter-spacing: calc(0.8 * var(--u));
 }
 
 .group-cap { font-size: calc(9.5 * var(--u)); }
@@ -436,9 +442,9 @@ body.dragging * {
 
 .knob-ctl {
   /* unitless design-pixel metrics, multiplied by --u below */
-  --kb: 44;    /* knob body diameter   */
-  --kr: 30;    /* tick ring radius     */
-  --kbox: 66;  /* widget box           */
+  --kb: 42;    /* knob body diameter   */
+  --kr: 28;    /* tick ring radius     */
+  --kbox: 62;  /* widget box           */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -780,6 +786,10 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   padding: 0 calc(6 * var(--u));
 }
 
+/* Four knobs abreast: a touch smaller so the two ADSR rows plus both titles
+   keep the envelopes panel the same height as its neighbours. */
+.row.knobs.adsr .knob-ctl { --kb: 40; --kr: 27; --kbox: 60; }
+
 /* --- KEYBOARD ------------------------------------------------------------ */
 .panel-keyboard .panel-inner {
   justify-content: flex-start;
@@ -920,10 +930,19 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   text-shadow: 0 1px 0 rgba(0, 0, 0, .9);
 }
 
-/* On the perf panel the legend sits above the cap, not printed on it. */
+/* On the perf panel the legend is silk-screened on the chassis, above the cap
+   — not printed on the cap itself. Absolute positioning keeps long legends
+   from widening the flex track. */
 .perf-panel .rocker > .sw-label {
   top: calc(-11 * var(--u));
   font-size: calc(9 * var(--u));
+}
+
+/* When a switch already carries LED captions above it (MODE: Mod / Arp) the
+   legend drops below the cap instead, as on the instrument. */
+.perf-panel .sw-ctl:has(.led-caps) .rocker > .sw-label {
+  top: auto;
+  bottom: calc(-11 * var(--u));
 }
 
 .perf-panel .sw-ctl { width: calc(30 * var(--u)); }
@@ -961,7 +980,7 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 
 .perf-mid {
   align-items: center;
-  padding: calc(6 * var(--u)) 0;
+  padding: calc(6 * var(--u)) 0 calc(14 * var(--u));
 }
 
 .perf-mid .perf-cell {
@@ -1006,7 +1025,7 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 /* --- bottom groups ------------------------------------------------------- */
 .perf-bot {
   align-items: flex-end;
-  gap: calc(8 * var(--u));
+  gap: calc(6 * var(--u));
   padding-bottom: calc(2 * var(--u));
 }
 
@@ -1023,21 +1042,26 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: calc(5 * var(--u));
+  gap: calc(4 * var(--u));
 }
 
+/* Fixed-width cells: the legend is absolutely placed so that wide labels
+   ("OSC 2 ONLY") crowd their neighbours the way the silk-screen does instead
+   of stretching the row. */
 .perf-btn {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: calc(2 * var(--u));
+  width: calc(24 * var(--u));
+  padding-top: calc(11 * var(--u));
 }
 
-/* BEND and TRANSPOSE print their legends beneath the buttons. */
-.perf-group.bend .perf-btn,
-.perf-group.transpose .perf-btn { flex-direction: column-reverse; }
-
 .perf-btn-cap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: calc(8 * var(--u));
   font-stretch: condensed;
   letter-spacing: calc(0.3 * var(--u));
@@ -1046,7 +1070,20 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   line-height: 1;
 }
 
-.perf-panel .perf-btn .sw-ctl { width: calc(26 * var(--u)); }
+/* BEND and TRANSPOSE print their legends beneath the buttons. */
+.perf-group.bend .perf-btn,
+.perf-group.transpose .perf-btn {
+  padding-top: 0;
+  padding-bottom: calc(11 * var(--u));
+}
+
+.perf-group.bend .perf-btn-cap,
+.perf-group.transpose .perf-btn-cap {
+  top: auto;
+  bottom: 0;
+}
+
+.perf-panel .perf-btn .sw-ctl { width: calc(24 * var(--u)); }
 .perf-panel .perf-btn button.rocker { height: calc(30 * var(--u)); }
 .perf-panel .perf-btn .leds { top: calc(7 * var(--u)); }
 .perf-panel .perf-btn .rocker-face { height: calc(11 * var(--u)); }

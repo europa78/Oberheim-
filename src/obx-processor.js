@@ -426,12 +426,11 @@ class OBXProcessor extends AudioWorkletProcessor {
   }
 
   renderVoice(v, L, lfo, n, outL, outR, masterCents, bendSemis, spread) {
-    const p = L.p;
     const gl = this.globals;
 
     // ---- per-block coefficients -------------------------------------------
     const vintage = L.get('vintage');
-    const detuneCents = (L.get('osc2detune', 0.5) - 0.5) * 50;
+    const detuneCents = (L.get('osc2detune', 0.5) - 0.5) * 100;
 
     const osc1Base = scale.osc1Semis(L.get('osc1Freq'));
     const osc2Base = scale.osc2Semis(L.get('osc2Freq'));
@@ -497,7 +496,8 @@ class OBXProcessor extends AudioWorkletProcessor {
       v.pitch += (v.target - v.pitch) * glideCoef;
 
       const pressure = gl.pressure;
-      const vib = (gl.modDepth * 0.5 + (touchFil || touchAmp ? 0 : 0)) * mod;
+      // "This controls the amount of vibrato to be added to both Oscillators."
+      const vib = gl.modDepth * 0.5 * mod;
       const freqMod = depth1 * depth1 * 12 * mod;
 
       let semis1 = v.pitch + gl.transpose * 12 + osc1Base + masterCents / 100 + voiceDetune / 100 + vib;
@@ -523,8 +523,7 @@ class OBXProcessor extends AudioWorkletProcessor {
         // Oscillator 2 first: it can modulate oscillator 1 (X-MOD) and is the
         // slave when SYNC is on.
         v.phase2 += dt2;
-        let wrapped2 = false;
-        if (v.phase2 >= 1) { v.phase2 -= 1; wrapped2 = true; }
+        if (v.phase2 >= 1) v.phase2 -= 1;
 
         let o2 = 0;
         if (osc2On) {
@@ -571,8 +570,6 @@ class OBXProcessor extends AudioWorkletProcessor {
                - polyBlep((v.phase1 + 1 - pw1) % 1, dt1);
           }
         }
-        if (wrapped2 && syncOn) { /* slave wrap already handled above */ }
-
         acc += o1 * fOsc1 + o2 * fOsc2;
       }
       let mix = acc * 0.5 * 0.5;                     // decimate, then headroom
@@ -599,7 +596,7 @@ class OBXProcessor extends AudioWorkletProcessor {
 
       // ---- amplifier ------------------------------------------------------
       let amp = aEnv * velAmp;
-      if (touchAmp) amp *= 1 - 0.5 + 0.5 * (1 + pressure) * 0.5 + pressure * 0.5;
+      if (touchAmp) amp *= 1 + pressure * 0.6;
       if (d2v) amp *= 1 - depth2 * 0.5 * (0.5 - mod * 0.5);
 
       const y = sig * amp * 0.32;

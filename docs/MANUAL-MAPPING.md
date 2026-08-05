@@ -21,14 +21,18 @@ again in "Deliberate departures" at the end.
 
 Two caveats on what "in this build" means:
 
-* Ranges below come from `src/params.js` (the parameter model) and from the
-  tooltip formatters at the bottom of `src/ui.js`. Those formatters are the only
-  place the build currently states a scaling in musical units; no DSP module is
-  present in the tree yet, so anything not fixed by those two files is described
-  as normalised 0..1 and nothing more.
+* Ranges below come from three files and nowhere else: `src/params.js` (the
+  parameter model), the `scale` table and voice loop in `src/obx-processor.js`
+  (the AudioWorklet DSP, which is what actually determines how a parameter
+  sounds), and the tooltip formatters at the bottom of `src/ui.js` (what the
+  user is told a knob is doing). Anything those three do not pin down is
+  described as normalised 0..1 and nothing more.
 * Every programmable parameter is stored normalised 0..1, exactly as the
   original programmer stored 8-bit values. `switch` parameters hold 0 or 1;
   `multi` parameters hold an integer `0..states-1`.
+
+One known inconsistency between those files is flagged inline below: the
+OSC 2 DETUNE readout in `ui.js` reports twice the detune the DSP applies.
 
 ---
 
@@ -59,7 +63,7 @@ three original controls are in `PARAMS` here.
 | --- | --- | --- | --- |
 | PORTAMENTO | `portamento` | knob, default 0.00; `glide` formatter reads `0` as "off" and otherwise `2000·v²` ms, so roughly 0–2 s | *"This control determines the rate of portamento or 'glide' of each voice … the portamento of the OB-X is polyphonic, so each voice will portamento from note to note independently of all other notes. Portamento also functions in UNISON mode."* |
 | UNISON | `unison` | switch, 0/1, default 0 | *"When switched on, causes all voices to be sounded by one key depression. In UNISON mode, the OB-X keyboard operates with low note rule."* Used by the Group C leads in the factory bank. |
-| OSC 2 DETUNE | `osc2detune` | knob, default 0.50, flagged `center: true`; the `detune` formatter reads `(v-0.5)*100` cents, i.e. ±50 cents, and the knob's LED lights whenever the value is more than 0.02 away from centre | *"This control allows Oscillator 2 to be tuned either flat or sharp with respect to Oscillator 1 … The associated LED turns on whenever the second oscillator is being detuned."* |
+| OSC 2 DETUNE | `osc2detune` | knob, default 0.50, flagged `center: true`. **The two files disagree:** the DSP applies `(v-0.5)*50` cents, i.e. ±25 cents, while the `detune` formatter in `ui.js` reads out `(v-0.5)*100`, i.e. ±50 cents — the readout is double the audible detune. The knob's LED lights whenever the value is more than 0.02 away from centre | *"This control allows Oscillator 2 to be tuned either flat or sharp with respect to Oscillator 1. Turning the control to the left makes Oscillator 2 go flat and to the right makes it go sharp. The associated LED turns on whenever the second oscillator is being detuned."* The DSP figure is the one the factory bank is voiced against. |
 | — (addition) | `vintage` | knob, default 0.30 | Component-drift amount. Not a 1979 control. |
 | — (addition) | `velo` | multi, 4 states, default 0 — off / fil / amp / both (panel LED caps `FIL`, `AMP`) | Velocity routing. The OB-X keyboard was not velocity sensitive. |
 | — (addition) | `touch` | multi, 4 states, default 0 — off / fil / amp / both | Aftertouch routing. Not a 1979 control. |

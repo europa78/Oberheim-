@@ -183,9 +183,14 @@ class Rocker {
     this.root.classList.toggle('on', n > 0);
     if (this.leds.length === 1) {
       this.leds[0].classList.toggle('on', n > 0);
+    } else if (this.states === 2) {
+      // A two-position selector lights one LED or the other — the filter's
+      // 2 / 4 pole choice and the lever's Mod / Arp mode.
+      this.leds[0].classList.toggle('on', n === 0);
+      this.leds[1].classList.toggle('on', n === 1);
     } else {
-      // Two LEDs encode the state as a small binary display, matching the
-      // panel's FIL / AMP and HALF / FULL indicator pairs.
+      // Otherwise the pair reads as a small binary display, matching the
+      // panel's FIL / AMP and HALF / FULL indicators.
       this.leds[0].classList.toggle('on', n === 1 || n === 3);
       this.leds[1].classList.toggle('on', n === 2 || n === 3);
     }
