@@ -114,7 +114,7 @@ console.log(`AUDIO ${audio.length} programs rendered, ${bad} flagged`);
 const rmsAll = audio.map(a=>a.rms);
 console.log('RMS min/med/max', Math.min(...rmsAll).toFixed(4), rmsAll.sort((a,b)=>a-b)[Math.floor(rmsAll.length/2)].toFixed(4), Math.max(...rmsAll).toFixed(4));
 
-await page.screenshot({ path: path.join(ROOT, 'docs', 'panel.png'), fullPage: true });
+await page.screenshot({ path: path.join(ROOT, 'docs', 'panel.png'), fullPage: true, scale: 'css' });
 console.log('ERRORS', errors.length ? JSON.stringify(errors.slice(0,10), null, 1) : 'none');
 await browser.close();
 server.close();

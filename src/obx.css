@@ -1061,9 +1061,12 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 .perf-group.arp { flex: 1 1 auto; }
 
 /* Extra spacing so the wide "OSC 2 ONLY" / "AMOUNT" legends clear each other. */
-.perf-group.bend .perf-btns { gap: calc(12 * var(--u)); }
+.perf-group.bend .perf-btns { gap: calc(17 * var(--u)); }
 .perf-group.bend .perf-btn-cap,
-.perf-group.transpose .perf-btn-cap { font-size: calc(7 * var(--u)); }
+.perf-group.transpose .perf-btn-cap {
+  font-size: calc(6.5 * var(--u));
+  letter-spacing: 0;
+}
 
 .perf-btns {
   display: flex;

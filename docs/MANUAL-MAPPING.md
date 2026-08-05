@@ -263,8 +263,9 @@ capacity and addressing: 32 programs as four groups (A–D) of eight, which is h
   postdates the OB-X, which used discrete CV/gate and a cassette interface.
 * **Computer-keyboard playing** (A–L / W–P), an interface-only addition.
 
-Polyphony is **eight voices**, which the original OB-X also offered (it shipped
-in 4-, 6- and 8-voice configurations), so that is not a departure.
+Polyphony is **eight voices** (`VOICE_COUNT = 8` in `obx-processor.js`), which
+the original OB-X also offered — it shipped in 4-, 6- and 8-voice
+configurations — so that is not a departure.
 
 ### In the manual, not implemented here
 
@@ -277,12 +278,19 @@ in 4-, 6- and 8-voice configurations), so that is not a departure.
 * **Foot-control inputs** — the volume-pedal input the VOLUME entry mentions
   (*"the provision for a VOLUME pedal input without an increase in hum or
   noise"*), plus the other rear-panel pedal/footswitch jacks.
-* **LEFT / MONO / RIGHT audio outputs** and the rest of the rear panel as
-  discrete outputs.
+* **LEFT / MONO / RIGHT audio outputs** as separate jacks. The DSP renders a
+  stereo pair fed by the voice pan-pots; there is no separate mono sum, and no
+  rear panel.
 * **AUTO TUNE behaviour in detail** — `g:tune` is present as a momentary switch,
   but the manual's specifics (output amplifier muted during tuning; all
   pitch-affecting controls disabled *except* the pitch bend lever, so moving it
   mid-tune leaves the oscillators out of tune) are not modelled.
-* **Low-note-rule voice assignment in UNISON** — `unison` exists, but the
-  manual's *"the lowest note played on the keyboard will always have priority"*
-  rule is a note about voice allocation, not something `params.js` pins down.
+* **UNISON with HOLD as a four-step procedure** — the manual's press-UNISON,
+  hold-HOLD, play, release-HOLD sequence. `unison` and `g:hold` both exist, but
+  the interlocked procedure and its *"press any key on the keyboard"* cancel are
+  not reproduced as such.
+
+The manual's low-note rule for UNISON *is* implemented: `noteOn` in
+`obx-processor.js` ignores a new note above the lowest sounding one while UNISON
+is on, matching *"the lowest note played on the keyboard will always have
+priority."*
