@@ -354,7 +354,7 @@ export class Surface {
         add(el('div', 'sw-group xmod'),
             el('div', 'group-cap', { text: 'X-MOD' }),
             this.row('pair',
-              this.knob({ id: 'xmod', label: 'MOD', size: 'sm', format: pct }),
+              this.sw({ id: 'xmod', label: 'MOD', leds: ['amber', 'red'], ledCaps: ['HALF', 'FULL'], states: 3 }),
               this.sw({ id: 'sync', label: 'SYNC' }))),
         waveGroup(2, 'osc2Saw', 'osc2Pulse')));
     return p;

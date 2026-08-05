@@ -10,7 +10,22 @@ import { GLOBALS, PARAM_BY_ID, PARAM_IDS, defaultProgram, normaliseProgram, clam
 import { Surface } from './ui.js';
 import { FACTORY_BANK } from './presets.js';
 
-const STORAGE_KEY = 'obx.state.v1';
+// Bumped when a stored parameter changes meaning rather than just its value,
+// so an old save is discarded instead of being reinterpreted. v2: X-MOD went
+// from a continuous knob to an off / half / full selector.
+const STORAGE_KEY = 'obx.state.v2';
+
+/** Globals the DSP holds a copy of. */
+const ENGINE_GLOBALS = new Set([
+  'masterVol', 'volBalance', 'masterTune', 'modDepth', 'bendRange', 'bendOsc2Only',
+]);
+
+/** Globals whose change affects no control but their own. */
+const SELF_CONTAINED_GLOBALS = new Set([
+  'masterVol', 'volBalance', 'masterTune', 'modDepth', 'arpRate', 'bank',
+  'global', 'bendRange', 'bendOsc2Only', 'arpOn', 'arpHold', 'arpMode',
+  'tune', 'hold', 'chord',
+]);
 const GROUPS = 'ABCD';
 const PAGES = 2;              // PAGE 2 doubles the programmer to 64 slots
 const PROGRAMS_PER_PAGE = 32; // 4 groups x 8
@@ -184,12 +199,16 @@ class Store {
     }
 
     // Anything the engine mirrors directly.
-    if (['masterVol', 'volBalance', 'masterTune', 'modDepth', 'bendRange', 'bendOsc2Only'].includes(key)) {
+    if (ENGINE_GLOBALS.has(key)) {
       this.g[key] = v;
       this.engine?.setGlobal(key, v);
     }
 
-    this.surface?.refresh();
+    // Controls that only light their own LED do not need the whole panel
+    // redrawn — this path runs on every pointer move while a knob is turning.
+    if (SELF_CONTAINED_GLOBALS.has(key)) this.surface?.renderOne(`g:${key}`);
+    else this.surface?.refresh();
+
     this.updateDisplay();
     this.persist();
   }
@@ -488,9 +507,15 @@ class App {
 
   panic() {
     for (const n of [...this.sounding]) this.surface.setKeyDown(n, false);
+    for (const n of this.arpNotes) this.surface.setKeyDown(n, false);
     this.sounding.clear();
     this.physical.clear();
     this.heldByHold.clear();
+    this.chordVoices?.clear();
+    this.arpNotes = [];
+    this.arpCurrent = null;
+    clearTimeout(this.arpTimer);
+    this.arpTimer = null;
     this.engine.panic();
   }
 

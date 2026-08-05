@@ -22,6 +22,7 @@
 const SR = sampleRate;
 const TWO_PI = Math.PI * 2;
 const VOICE_COUNT = 8;
+const ALL_VOICES = Array.from({ length: VOICE_COUNT }, (_, i) => i);
 
 // ---------------------------------------------------------------------------
 // Parameter scaling — the programmer stores 0..1; these turn that into
@@ -49,6 +50,20 @@ const scale = {
 
 function semisToRatio(s) { return Math.pow(2, s / 12); }
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+/*
+ * Output saturation. Eight voices in unison with both oscillators, noise and
+ * full resonance can sum past full scale, and hard digital clipping there
+ * sounds nothing like an overdriven analogue output stage. This is unity
+ * below the knee and bends smoothly to the rail above it, so the instrument
+ * can be driven hard without ever producing a squared-off edge.
+ */
+const KNEE = 0.7;
+function softClip(x) {
+  const a = Math.abs(x);
+  if (a <= KNEE) return x;
+  return Math.sign(x) * (KNEE + (1 - KNEE) * Math.tanh((a - KNEE) / (1 - KNEE)));
+}
 
 // ---------------------------------------------------------------------------
 // Band-limited oscillator primitives
@@ -298,7 +313,6 @@ class OBXProcessor extends AudioWorkletProcessor {
       unisonSpread: 1,
       pressure: 0,
     };
-    this.tuning = 0;       // cents offset applied by AUTO TUNE drift
     this.tuneDrift = 0;    // slowly accumulating oscillator drift
     this.driftClock = 0;
     this.masterGain = 0;
@@ -348,7 +362,11 @@ class OBXProcessor extends AudioWorkletProcessor {
 
   poolFor(layer) {
     const pool = this.pools[layer];
-    return pool && pool.length ? pool : this.pools[0];
+    if (pool && pool.length) return pool;
+    // Fall back to the first pool, then to every voice, so a malformed pools
+    // message can never leave note-on with nothing to allocate from.
+    const first = this.pools[0];
+    return first && first.length ? first : ALL_VOICES;
   }
 
   noteOn(note, velocity, layer) {
@@ -437,8 +455,8 @@ class OBXProcessor extends AudioWorkletProcessor {
     const targetGain = g.masterVol * g.masterVol * 0.9;
     for (let i = 0; i < n; i++) {
       this.masterGain += (targetGain - this.masterGain) * 0.002;
-      outL[i] *= this.masterGain;
-      if (outR !== outL) outR[i] *= this.masterGain;
+      outL[i] = softClip(outL[i] * this.masterGain);
+      if (outR !== outL) outR[i] = softClip(outR[i] * this.masterGain);
     }
     return true;
   }
@@ -459,7 +477,9 @@ class OBXProcessor extends AudioWorkletProcessor {
     const osc1On = saw1 || pul1, osc2On = saw2 || pul2;
 
     const pwBase = scale.pulseWidth(L.get('pulseWidth'));
-    const xmod = L.get('xmod');
+    // Off / half / full, matching the depth the old continuous control gave
+    // at its useful settings.
+    const xmod = [0, 0.5, 2.0][Math.round(L.get('xmod'))] ?? 0;
     const syncOn = L.get('sync') >= 0.5;
 
     const depth1 = L.get('depth1');
@@ -539,7 +559,13 @@ class OBXProcessor extends AudioWorkletProcessor {
       // ---- oscillators, 2x oversampled -----------------------------------
       let acc = 0;
       for (let s = 0; s < 2; s++) {
-        const dt2 = f2 / (SR * 2);
+        // Both increments are capped short of Nyquist. Without the cap a high
+        // key with osc 2 tuned up five octaves and TRANSPOSE UP (or a broad
+        // bend) pushes the increment past a whole cycle per sample, and the
+        // single-subtract wrap below can never bring the phase back into
+        // range — the oscillator folds down to a loud audible tone where it
+        // should be inaudibly high.
+        const dt2 = clamp(f2 / (SR * 2), 0, 0.45);
         // Oscillator 2 first: it can modulate oscillator 1 (X-MOD) and is the
         // slave when SYNC is on.
         v.phase2 += dt2;
@@ -563,7 +589,7 @@ class OBXProcessor extends AudioWorkletProcessor {
         }
 
         // "X-MOD ... causes Oscillator 2 to modulate Oscillator 1"
-        const f1m = xmod > 0 ? f1 * (1 + xmod * xmod * 4 * o2) : f1;
+        const f1m = xmod > 0 ? f1 * (1 + xmod * o2) : f1;
         const dt1 = clamp(Math.abs(f1m) / (SR * 2), 0, 0.45);
 
         v.phase1 += dt1;
@@ -571,7 +597,14 @@ class OBXProcessor extends AudioWorkletProcessor {
           v.phase1 -= 1;
           // "SYNC ... causes Oscillator 2 to lock onto a harmonic of
           //  Oscillator 1" — the master's wrap resets the slave.
-          if (syncOn) { v.phase2 = v.phase1 * (dt2 / Math.max(dt1, 1e-9)); v.tri2 = 0; }
+          // The slave restarts proportionally to how far the master overshot
+          // its wrap, which places the reset at the right sub-sample instant.
+          // The modulo keeps a very slow master from throwing the ratio out of
+          // range.
+          if (syncOn) {
+            v.phase2 = (v.phase1 * (dt2 / Math.max(dt1, 1e-9))) % 1;
+            v.tri2 = 0;
+          }
         }
 
         let o1 = 0;

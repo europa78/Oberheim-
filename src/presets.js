@@ -349,7 +349,7 @@ export const FACTORY_BANK = [
     osc2detune: 0.500,
     osc1Saw: 1, osc2Saw: 1,
     osc2Freq: semi(7),
-    xmod: 0.36, // moderate: bright and reedy, not yet clangorous
+    xmod: 1, // half: bright and reedy, not yet clangorous
     cutoff: 0.30, resonance: 0.35, filterMod: 0.46,
     fAttack: 0.058, fDecay: 0.317, fSustain: 0.32, fRelease: 0.262,
     aAttack: 0.074, aDecay: 0.342, aSustain: 0.90, aRelease: 0.228,
@@ -481,7 +481,7 @@ export const FACTORY_BANK = [
     osc2detune: 0.500,
     osc1Saw: 1, osc2Saw: 1,
     osc2Freq: semi(25),
-    xmod: 0.72, // well past the clangorous threshold — ring-modulator territory
+    xmod: 2, // full: ring-modulator territory
     cutoff: 0.26, resonance: 0.45, filterMod: 0.55,
     fAttack: 0.000, fDecay: 0.235, fSustain: 0.10, fRelease: 0.246,
     aAttack: 0.000, aDecay: 0.292, aSustain: 0.30, aRelease: 0.310,

@@ -164,7 +164,7 @@ await page.evaluate(() => { window.obx.store.g.modDepth = 0; window.obx.engine.s
 // 15. persistence round-trip
 await page.evaluate(()=>window.obx.store.persist());
 await page.waitForTimeout(600);
-checks.push(['state persisted', await page.evaluate(()=>!!localStorage.getItem('obx.state.v1'))]);
+checks.push(['state persisted', await page.evaluate(()=>!!localStorage.getItem('obx.state.v2'))]);
 
 // 16. transpose is exclusive
 await q('.perf-panel [data-param="g:transposeUp"] .rocker').click();

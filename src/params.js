@@ -53,7 +53,10 @@ export const PARAMS = [
   { id: 'osc1Pulse',   name: 'Pulse',        type: 'switch', def: 0 },
   // "fully counter-clockwise a square wave (50%) ... fully clockwise a 5% duty cycle"
   { id: 'pulseWidth',  name: 'Pulse Width',  type: 'knob',  def: 0.00 },
-  { id: 'xmod',        name: 'X-Mod',        type: 'knob',  def: 0.00 },
+  // "When switched on, causes Oscillator 2 to modulate Oscillator 1." The
+  // panel carries a two-LED rocker here, like the filter's source switches,
+  // so it selects off / half / full rather than a continuous amount.
+  { id: 'xmod',        name: 'X-Mod',        type: 'multi', states: 3, def: 0 },
   { id: 'sync',        name: 'Sync',         type: 'switch', def: 0 },
   // "2 FREQUENCY ... in half-step increments over a five octave range" — the
   // range runs upward from unison, so osc 2 cannot be tuned below osc 1 by

@@ -118,7 +118,7 @@ The manual: *"The controls in the OSCILLATORS section are all programmable."*
 | 1 FREQUENCY | `osc1Freq` | knob with `steps: 5`, default 0.00, so `quantise()` snaps it to 0, 0.25, 0.5, 0.75, 1 — five detents; the `octaves` formatter reads `+round(v·4) oct` | *"This control determines the initial frequency of Oscillator 1 in one octave increments over a four octave range."* |
 | SAW / PULSE WAVEFORM (osc 1) | `osc1Saw` (default 1), `osc1Pulse` (default 0) | Two independent switches. At least one must be on for oscillator 1 to sound; **both on gives a triangle** in this build | *"This switch allows selection of either a sawtooth or pulse waveform from Oscillator 1."* The panel silk-screens TRIANGLE under the pair, which is where the both-on behaviour comes from. |
 | PULSE WIDTH | `pulseWidth` | knob, default 0.00; shared by both oscillators. Both the DSP and the `duty` readout use `0.5 − 0.45v`, i.e. 50 % duty at 0 and 5 % at 1 | *"This control allows selection of initial pulse width of both oscillators. When it is set fully counter-clockwise a square wave (50 % duty cycle) is selected. When it is set fully clockwise a 5 % duty cycle is selected."* Has no effect unless a Pulse waveform is on. |
-| X-MOD | `xmod` | knob, default 0.00; the DSP frequency-modulates oscillator 1 by oscillator 1's output as `f1 · (1 + xmod²·4·o2)`, so the taper is square-law and anything past roughly 0.3 gets clangorous | *"When switched on, causes Oscillator 2 to modulate Oscillator 1. This allows for production of 'ring-modulator' type sounds."* **Difference:** the manual describes a switch; this build exposes it as a continuous amount knob (with SYNC as the switch beside it). |
+| X-MOD | `xmod` | three-position rocker, default off; off / half / full drive oscillator 1's frequency as `f1 · (1 + amount · o2)` with amount 0, 0.5 or 2.0 | *"When switched on, causes Oscillator 2 to modulate Oscillator 1. This allows for production of 'ring-modulator' type sounds."* The panel carries a two-LED rocker here, like the filter's source switches, so this build offers two depths rather than the manual's plain on/off. |
 | SYNC | `sync` | switch, default 0 | *"When switched on, causes Oscillator 2 to lock onto a harmonic of Oscillator 1."* Sync patches want `osc2Freq` well above 0 plus a filter envelope. |
 | 2 FREQUENCY | `osc2Freq` | knob with `steps: 61`, default 0.00, so `quantise()` snaps to 61 half-step detents; the `semis` formatter reads `+round(v·60) semitones` | *"This control determines the initial frequency of Oscillator 2 in half-step increments over a five octave range."* Note the range is upward only from unison, so a unison-ish detuned pair is made with `osc2Freq` at 0 plus `osc2detune`. |
 | SAW / PULSE WAVEFORM (osc 2) | `osc2Saw` (default 1), `osc2Pulse` (default 0) | As for oscillator 1, including both-on = triangle | *"This switch allows selection of either a sawtooth or pulse waveform from Oscillator 2."* |
@@ -249,7 +249,7 @@ capacity and addressing: 32 programs as four groups (A–D) of eight, which is h
 * **Aftertouch routing** — `touch` (off / filter / amp / both). No aftertouch on
   the original keybed.
 * **X-MOD as a continuous amount** — the manual describes X-MOD as a switch;
-  here it is a knob (`xmod`).
+  here it has two depths (`xmod`: off / half / full).
 * **CHORD as a single switch** — the manual's chord effect is a HOLD + RESET
   procedure; there is no RESET switch on this panel.
 * **VOL/BALANCE** — `g:volBalance`, a stereo spread control over the voice
