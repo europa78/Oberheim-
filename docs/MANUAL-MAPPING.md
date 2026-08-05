@@ -192,10 +192,10 @@ are all non-programmable globals.
 | Manual control | Parameter id | Range / behaviour in this build | Manual quote or note |
 | --- | --- | --- | --- |
 | MODULATION LEVER | `g:modDepth` (`GLOBALS.modDepth`, default 0.00) | 0..1 depth knob labelled DEPTH; the lever itself is the `bender` widget | *"This controls the amount of vibrato to be added to both Oscillators. If a patch already contains vibrato, this control will add more as it is moved towards the front. It has no effect when moved in the other direction."* |
-| PITCH BEND LEVER | `GLOBALS.bend` | −1..1 | *"Moving it towards the front causes the pitch to go up, and moving it towards the rear causes the pitch to go down. Its range is determined by the NARROW/BROAD switch."* **Difference:** the original had two separate levers; this build has one lever plus a `g:arpMode` switch with LED caps `Mod` / `Arp` that selects what it drives. |
+| PITCH BEND LEVER | the `bender` widget (lever position is application state, not a stored global) | −1..1 | *"Moving it towards the front causes the pitch to go up, and moving it towards the rear causes the pitch to go down. Its range is determined by the NARROW/BROAD switch."* **Difference:** the original had two separate levers; this build has one lever plus a `g:arpMode` switch with LED caps `Mod` / `Arp` that selects what it drives. |
 | OSC 2 ONLY | `g:bendOsc2Only` (`GLOBALS.bendOsc2Only`, default 0) | switch, 0/1 | *"When this switch is on, the PITCH BEND lever bends only Oscillator 2 of each voice. This has an interesting affect on programs in which Oscillator 2 is in 'sync'."* |
 | NARROW / BROAD | `g:bendRange` (`GLOBALS.bendRange`, default 0) | 0 = narrow, 1 = broad; the DSP bend amount is `(broad ? 12 : 2) · bend` semitones, i.e. exactly a whole step or an octave. Panel caption is AMOUNT | *"In the NARROW position, the PITCH BEND lever has a range of up or down one whole-step … In the BROAD position, the PITCH BEND Lever can move the pitch up or down one octave."* |
-| TRANSPOSE | `GLOBALS.transpose` (−1 / 0 / +1), driven by `g:transposeDown` and `g:transposeUp` | Three effective positions | *"This switch has three positions, UP OCTAVE, normal, and DOWN OCTAVE. This transposes the entire keyboard up or down one octave from its normal range, expanding the keyboard's range to six octaves."* `KEY_RANGE` is 61 keys, C2..C7 — the original's five-octave keybed. |
+| TRANSPOSE | `g:transposeDown` / `g:transposeUp`, sent to the engine as −1 / 0 / +1 | Three effective positions | *"This switch has three positions, UP OCTAVE, normal, and DOWN OCTAVE. This transposes the entire keyboard up or down one octave from its normal range, expanding the keyboard's range to six octaves."* `KEY_RANGE` is 61 keys, C2..C7 — the original's five-octave keybed. |
 
 ---
 
@@ -221,9 +221,9 @@ capacity and addressing: 32 programs as four groups (A–D) of eight, which is h
 
 | Panel control | Parameter id | Range / behaviour in this build | Note |
 | --- | --- | --- | --- |
-| SPLIT | `g:split` | switch; `GLOBALS.keyboardMode` = `'split'` | Not on the 1979 OB-X. |
-| DOUBLE | `g:double` | switch; `GLOBALS.keyboardMode` = `'double'` | Not on the 1979 OB-X. |
-| LOWER / UPPER | `g:lower`, `g:upper` | Select the edited layer (`GLOBALS.editLayer`, 0 = upper, 1 = lower); split point is `GLOBALS.splitNote` = 60 | Not on the 1979 OB-X. |
+| SPLIT | `g:split` | switch; puts the lower layer below the split point | Not on the 1979 OB-X. |
+| DOUBLE | `g:double` | switch; every key plays both layers | Not on the 1979 OB-X. |
+| LOWER / UPPER | `g:lower`, `g:upper` | Select the edited layer (0 = upper, 1 = lower); the split point defaults to note 60 and is set by pressing a key with SPLIT newly on | Not on the 1979 OB-X. |
 
 ### ARPEGGIATOR panel (addition)
 
@@ -231,7 +231,7 @@ capacity and addressing: 32 programs as four groups (A–D) of eight, which is h
 | --- | --- | --- | --- |
 | ARPEGGIATE | `g:arpOn` (`GLOBALS.arpOn`) | switch | Entirely an addition; the 1979 OB-X had no arpeggiator. |
 | RATE | `g:arpRate` (`GLOBALS.arpRate`, default 0.45) | knob; `arpRate` formatter reads `0.5 + 15v` Hz | — |
-| UP / DOWN / KBD / HOLD | `g:arpUp`, `g:arpDown`, `g:arpKbd`, `g:arpHold` | switches feeding `GLOBALS.arpMode` (`'up'`/`'down'`/`'updown'`/`'kbd'`) and `GLOBALS.arpHold` | — |
+| UP / DOWN / KBD / HOLD | `g:arpUp`, `g:arpDown`, `g:arpKbd`, `g:arpHold` | switches; UP and DOWN together give up-then-down, KBD plays in the order keys were pressed, HOLD latches | — |
 
 ---
 
@@ -255,7 +255,7 @@ capacity and addressing: 32 programs as four groups (A–D) of eight, which is h
 * **VOL/BALANCE** — `g:volBalance`, a stereo spread control over the voice
   pan-pots.
 * **Arpeggiator** — on/off, rate, up/down/kbd, hold.
-* **Split and double keyboard modes** — `GLOBALS.keyboardMode`, `editLayer`,
+* **Split and double keyboard modes** — the `g:split` / `g:double` switches,
   `splitNote`.
 * **PAGE 2 and GLOBAL programmer switches**, and an **alphanumeric LCD** showing
   bank, program address and program name.

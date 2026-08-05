@@ -6,7 +6,7 @@
  * MIDI and computer-keyboard input, and the bridge to the AudioWorklet.
  */
 
-import { PARAM_BY_ID, PARAM_IDS, defaultProgram, normaliseProgram, clampParam, quantise, KEY_RANGE } from './params.js';
+import { GLOBALS, PARAM_BY_ID, PARAM_IDS, defaultProgram, normaliseProgram, clampParam, quantise, KEY_RANGE } from './params.js';
 import { Surface } from './ui.js';
 import { FACTORY_BANK } from './presets.js';
 
@@ -28,16 +28,7 @@ class Store {
     this.manualPanel = defaultProgram('Manual Panel');
     this.live = [normaliseProgram(this.bank[0]), normaliseProgram(this.bank[8])];
 
-    this.g = {
-      masterVol: 0.75, volBalance: 0.5, masterTune: 0.5,
-      tune: 0, hold: 0, chord: 0,
-      split: 0, double: 0, lower: 0, upper: 1,
-      manual: 0, page2: 0, bank: 0, group: 0, global: 0, write: 0,
-      prog1: 1, prog2: 0, prog3: 0, prog4: 0, prog5: 0, prog6: 0, prog7: 0, prog8: 0,
-      arpRate: 0.45, modDepth: 0, perfLower: 0, perfUpper: 1,
-      arpMode: 1, arpOn: 0, arpHold: 0, arpKbd: 0, arpDown: 0, arpUp: 1,
-      bendOsc2Only: 0, bendRange: 0, transposeDown: 0, transposeUp: 0,
-    };
+    this.g = { ...GLOBALS };
 
     this.sel = [{ page: 0, group: 0, prog: 0 }, { page: 0, group: 1, prog: 0 }];
     this.editLayer = 0;
