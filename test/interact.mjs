@@ -118,12 +118,55 @@ checks.push(['chord transposes', await page.evaluate(()=>{
 })]);
 await page.evaluate(()=>{window.obx.store.set('g:chord',0);window.obx.panic();});
 
-// 13. persistence round-trip
+// 13. arpeggiator cycles through held notes
+checks.push(['arpeggiator steps through held notes', await page.evaluate(async () => {
+  const a = window.obx;
+  a.panic();
+  a.store.set('g:arpRate', 1);        // fastest
+  a.store.set('g:arpUp', 1);
+  a.store.set('g:arpOn', 1);
+  for (const n of [60, 64, 67]) a.noteOn(n, 0.8);
+  const seen = new Set();
+  for (let i = 0; i < 40; i++) {
+    await new Promise(r => setTimeout(r, 15));
+    if (a.arpCurrent !== null) seen.add(a.arpCurrent);
+  }
+  a.store.set('g:arpOn', 0);
+  for (const n of [60, 64, 67]) a.noteOff(n);
+  a.panic();
+  return [60, 64, 67].every(n => seen.has(n)) && seen.size === 3;
+})]);
+checks.push(['arpeggiator sounds one note at a time', await page.evaluate(() => {
+  const a = window.obx;
+  return a.arpCurrent === null && a.sounding.size === 0;
+})]);
+
+// 14. bend lever springs back to centre, mod depth stays
+checks.push(['bend lever springs back, mod stays', await page.evaluate(async () => {
+  const a = window.obx;
+  const lever = a.surface.benderLever;
+  const box = a.surface.bender.getBoundingClientRect();
+  const sent = [];
+  const real = a.engine.setGlobal.bind(a.engine);
+  a.engine.setGlobal = (id, v) => { sent.push([id, v]); real(id, v); };
+  const ev = (type, x, y) => lever.dispatchEvent(new PointerEvent(type,
+    { clientX: x, clientY: y, bubbles: true, pointerId: 1 }));
+  ev('pointerdown', box.right - 2, box.top + 2);   // hard right, fully up
+  ev('pointerup', box.right - 2, box.top + 2);
+  a.engine.setGlobal = real;
+  const bends = sent.filter(s => s[0] === 'bend').map(s => s[1]);
+  const mods = sent.filter(s => s[0] === 'modDepth').map(s => s[1]);
+  return bends.length >= 2 && bends[0] > 0.5 && bends.at(-1) === 0
+      && mods.length >= 1 && mods.at(-1) > 0.8 && a.store.g.modDepth > 0.8;
+})]);
+await page.evaluate(() => { window.obx.store.g.modDepth = 0; window.obx.engine.setGlobal('modDepth', 0); });
+
+// 15. persistence round-trip
 await page.evaluate(()=>window.obx.store.persist());
 await page.waitForTimeout(600);
 checks.push(['state persisted', await page.evaluate(()=>!!localStorage.getItem('obx.state.v1'))]);
 
-// 14. transpose is exclusive
+// 16. transpose is exclusive
 await q('.perf-panel [data-param="g:transposeUp"] .rocker').click();
 await q('.perf-panel [data-param="g:transposeDown"] .rocker').click();
 checks.push(['transpose exclusive', await page.evaluate(()=>window.obx.store.g.transposeUp===0&&window.obx.store.g.transposeDown===1)]);
