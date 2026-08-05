@@ -102,31 +102,49 @@ class ADSR {
 }
 
 // ---------------------------------------------------------------------------
-// Filter — four TPT one-pole stages in a ladder with soft-saturated feedback.
-// Tapping after stage 2 gives the "two-pole, low-pass type" of the original;
-// tapping after stage 4 gives the 24 dB/oct option the panel's TYPE switch
-// selects. Resonance is capped below the self-oscillation threshold because
-// the manual states the filter "cannot be put into oscillation".
+// Filter.
+//
+// The manual describes "a two-pole, low-pass type", which is the default here:
+// one topology-preserving state-variable section, taken from the trapezoidal
+// integration form, whose damping term gives a proper resonant peak. The
+// panel's TYPE switch adds a 24 dB/octave option, built by cascading a second
+// section behind the resonant one.
+//
+// The damping term never reaches zero, so the filter cannot ring on its own —
+// the manual is explicit that "even in its maximum position, the Filter cannot
+// be put into oscillation".
 // ---------------------------------------------------------------------------
 
-class Ladder {
-  constructor() { this.s0 = 0; this.s1 = 0; this.s2 = 0; this.s3 = 0; this.fb = 0; }
+/** One TPT state-variable low-pass section. `k` is the damping, 1/Q. */
+class SVF {
+  constructor() { this.ic1 = 0; this.ic2 = 0; }
 
-  process(x, G, k, fourPole) {
-    let u = x - k * this.fb;
-    u = Math.tanh(u * 0.8) * 1.25;      // gentle drive, keeps resonance tame
-
-    let v = (u - this.s0) * G; let y0 = v + this.s0; this.s0 = y0 + v;
-    v = (y0 - this.s1) * G;    let y1 = v + this.s1; this.s1 = y1 + v;
-    v = (y1 - this.s2) * G;    let y2 = v + this.s2; this.s2 = y2 + v;
-    v = (y2 - this.s3) * G;    let y3 = v + this.s3; this.s3 = y3 + v;
-
-    const out = fourPole ? y3 : y1;
-    this.fb = out;
-    return out;
+  process(x, g, k) {
+    const a1 = 1 / (1 + g * (g + k));
+    const a2 = g * a1;
+    const v3 = x - this.ic2;
+    const v1 = a1 * this.ic1 + a2 * v3;
+    const v2 = this.ic2 + g * v1;
+    this.ic1 = 2 * v1 - this.ic1;
+    this.ic2 = 2 * v2 - this.ic2;
+    return v2;
   }
 
-  reset() { this.s0 = this.s1 = this.s2 = this.s3 = this.fb = 0; }
+  reset() { this.ic1 = this.ic2 = 0; }
+}
+
+class OBXFilter {
+  constructor() { this.a = new SVF(); this.b = new SVF(); }
+
+  /** k1 damps the resonant section; the second section only runs in 4-pole. */
+  process(x, g, k1, fourPole) {
+    const drive = Math.tanh(x * 0.9) * 1.11;   // gentle input warmth
+    let y = this.a.process(drive, g, k1);
+    if (fourPole) y = this.b.process(y, g, 1.35);
+    return y;
+  }
+
+  reset() { this.a.reset(); this.b.reset(); }
 }
 
 // ---------------------------------------------------------------------------
@@ -151,7 +169,7 @@ class Voice {
     this.target = 60;
     this.filterEnv = new ADSR();
     this.ampEnv = new ADSR();
-    this.filter = new Ladder();
+    this.filter = new OBXFilter();
     this.noiseState = (index * 2654435761) >>> 0;
 
     // Per-voice analogue scatter, re-rolled on every note-on. The VINTAGE
@@ -457,7 +475,9 @@ class OBXProcessor extends AudioWorkletProcessor {
 
     const fourPole = Math.round(L.get('filterType')) === 1;
     const res = L.get('resonance');
-    const k = res * (fourPole ? 3.4 : 1.6);
+    // Damping runs from 2.0 (Q = 0.5, no emphasis) down to 0.1 (Q = 10), which
+    // is a strong peak that still cannot break into oscillation.
+    const k = 2 - 1.9 * res;
     const kbd = L.get('kbdTrack') >= 0.5 ? 1 : 0;
     const cutoffBase = L.get('cutoff');
     const filterMod = L.get('filterMod');
@@ -589,10 +609,9 @@ class OBXProcessor extends AudioWorkletProcessor {
 
       const fc = clamp(scale.cutoff(cut), 12, SR * 0.45);
       const gTan = Math.tan(Math.PI * fc / SR);
-      const G = gTan / (1 + gTan);
 
-      let sig = v.filter.process(mix, G, k, fourPole);
-      sig *= 1 + k * 0.22;                            // restore level lost to resonance
+      let sig = v.filter.process(mix, gTan, k, fourPole);
+      sig *= 1 + res * 0.35;                          // a little make-up for the narrow peak
 
       // ---- amplifier ------------------------------------------------------
       let amp = aEnv * velAmp;

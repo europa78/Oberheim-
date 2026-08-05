@@ -51,11 +51,12 @@ NOISE ─ half / full ───────────────────�
   oscillators. **SYNC** makes osc 1 the master and resets osc 2 on every
   master wrap; **X-MOD** lets osc 2 frequency-modulate osc 1 for
   ring-modulator-like timbres.
-* **Filter** is four TPT one-pole stages in a ladder with soft-saturated
-  feedback. The manual describes "a two-pole, low-pass type", which is the
-  default; the panel's TYPE switch also offers the 24 dB/octave tap. Resonance
-  is deliberately capped below self-oscillation, because the manual states the
-  filter "cannot be put into oscillation even in its maximum position".
+* **Filter** is a topology-preserving state-variable section in trapezoidal
+  form. The manual describes "a two-pole, low-pass type", which is the default;
+  the panel's TYPE switch cascades a second section for 24 dB/octave. Its
+  damping term never reaches zero, so the filter cannot ring on its own —
+  the manual states it "cannot be put into oscillation" even at maximum
+  resonance. Measured, resonance peaks around +18 dB at cut-off.
 * **Envelopes** are exponential four-stage ADSRs, 1 ms to 10 s, one for the
   filter and one for loudness.
 * **LFO** offers sine, square and sample-and-hold (they sum if you select more
@@ -96,6 +97,18 @@ set the split point. **LOWER** / **UPPER** choose which layer the panel edits.
 | `src/presets.js` | 32 factory programs |
 | `src/app.js` | Programmer, keyboard routing, arpeggiator, MIDI, engine bridge |
 | `docs/MANUAL-MAPPING.md` | Every manual control mapped to its parameter, with the manual's own wording |
+| `test/` | Headless-Chromium checks — see `test/README.md` |
+
+## Tests
+
+```sh
+npm install     # playwright
+npm test
+```
+
+Three suites run against real Chromium: a layout and render check over all 32
+factory programs, spectral measurements of the synthesis engine, and a set of
+DOM-driven behaviour checks on the programmer and keyboard routing.
 
 ## What this is and is not
 

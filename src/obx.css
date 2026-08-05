@@ -424,8 +424,8 @@ body.dragging * {
   text-shadow: 0 1px 0 rgba(0, 0, 0, .5), 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .35);
 }
 
-.env-title.top { margin-bottom: calc(-2 * var(--u)); }
-.env-title.bottom { margin-top: calc(-1 * var(--u)); }
+.env-title.top { margin-bottom: calc(-3 * var(--u)); }
+.env-title.bottom { margin-top: calc(-3 * var(--u)); }
 
 
 /* ===========================================================================
@@ -576,19 +576,30 @@ body.dragging * {
 
 .sw-ctl.wide { width: calc(46 * var(--u)); }
 
-/* tiny FIL / AMP style captions printed above the cap */
+/* Tiny FIL / AMP style captions on their own line above the cap. One equal
+   grid track per caption, spilling a little either side of the cap so each
+   caption centres over its own LED and neighbours never run together
+   ("HALF FULL", not "HALFFULL"). */
 .led-caps {
-  display: flex;
-  justify-content: space-around;
-  width: 100%;
-  padding: 0 calc(2 * var(--u));
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  width: calc(100% + 6 * var(--u));
+  margin: 0 calc(-3 * var(--u)) calc(1 * var(--u));
   font-size: calc(6.5 * var(--u));
   font-stretch: condensed;
-  letter-spacing: calc(0.3 * var(--u));
+  letter-spacing: calc(0.2 * var(--u));
+  line-height: 1.2;
   color: #1d222a;
   text-transform: uppercase;
   text-shadow: 0 1px 0 rgba(255, 255, 255, .45);
   white-space: nowrap;
+}
+
+.led-cap {
+  display: block;
+  text-align: center;
+  overflow: visible;
 }
 
 button.rocker {
@@ -620,14 +631,18 @@ button.rocker {
 
 button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 
+/* Centred on max-content rather than stretched edge-to-edge, so a long legend
+   spills a hair onto the panel instead of being clipped by the cap. */
 .sw-label {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
+  right: auto;
   top: calc(3 * var(--u));
-  font-size: calc(8 * var(--u));
+  width: max-content;
+  transform: translateX(-50%);
+  font-size: calc(7.5 * var(--u));
   font-stretch: condensed;
-  letter-spacing: calc(0.4 * var(--u));
+  letter-spacing: calc(0.2 * var(--u));
   line-height: 1;
   color: #eceded;
   text-transform: uppercase;
@@ -650,6 +665,8 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 }
 
 .leds.n1 { gap: 0; }
+/* Matches the two .led-cap track centres above, so caption sits over LED. */
+.leds.n2 { gap: calc(14 * var(--u)); }
 
 /* glossy lower face / seam across the bottom third of the cap */
 .rocker-face {
@@ -729,9 +746,11 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   padding-right: calc(6 * var(--u));
 }
 
+/* flex-basis:0 + equal grow keeps the three columns exactly the same width */
 .mod-col {
   position: relative;
   flex: 1 1 0;
+  min-width: 0;
   justify-content: flex-start;
   gap: calc(11 * var(--u));
   padding: 0 calc(4 * var(--u));
@@ -741,7 +760,7 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   content: "";
   position: absolute;
   left: calc(-2 * var(--u));
-  top: calc(22 * var(--u));
+  top: calc(20 * var(--u));
   bottom: calc(-2 * var(--u));
   width: calc(1.5 * var(--u));
   border-radius: 1px;
@@ -775,9 +794,10 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 
 /* --- ENVELOPES ----------------------------------------------------------- */
 .panel-envelopes .panel-inner {
-  gap: calc(7 * var(--u));
+  gap: calc(14 * var(--u));
   justify-content: center;
-  padding-bottom: calc(10 * var(--u));
+  padding-top: calc(12 * var(--u));
+  padding-bottom: calc(14 * var(--u));
 }
 
 .row.knobs.adsr {
@@ -901,7 +921,7 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 
 .lower-deck {
   display: grid;
-  grid-template-columns: calc(250 * var(--u)) minmax(0, 1fr);
+  grid-template-columns: calc(278 * var(--u)) minmax(0, 1fr);
   align-items: stretch;
   height: calc(284 * var(--u));
 }
@@ -948,6 +968,7 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 .perf-panel .sw-ctl { width: calc(30 * var(--u)); }
 .perf-panel button.rocker { height: calc(34 * var(--u)); }
 .perf-panel .leds { top: calc(9 * var(--u)); }
+.perf-panel .leds.n2 { gap: calc(12 * var(--u)); }
 .perf-panel .rocker-face { height: calc(13 * var(--u)); }
 .perf-panel .led-caps { font-size: calc(7 * var(--u)); }
 
@@ -1033,10 +1054,16 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 0;
   gap: calc(4 * var(--u));
 }
 
 .perf-group.arp { flex: 1 1 auto; }
+
+/* Extra spacing so the wide "OSC 2 ONLY" / "AMOUNT" legends clear each other. */
+.perf-group.bend .perf-btns { gap: calc(12 * var(--u)); }
+.perf-group.bend .perf-btn-cap,
+.perf-group.transpose .perf-btn-cap { font-size: calc(7 * var(--u)); }
 
 .perf-btns {
   display: flex;
@@ -1093,10 +1120,10 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: calc(5 * var(--u));
+  gap: calc(4 * var(--u));
   width: 100%;
-  font-size: calc(8.5 * var(--u));
-  letter-spacing: calc(0.9 * var(--u));
+  font-size: calc(8 * var(--u));
+  letter-spacing: calc(0.5 * var(--u));
   white-space: nowrap;
 }
 
@@ -1104,7 +1131,7 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 .group-cap.rule::after {
   content: "";
   flex: 1 1 auto;
-  min-width: calc(8 * var(--u));
+  min-width: calc(5 * var(--u));
   height: calc(1.5 * var(--u));
   background: #d8d9db;
   box-shadow: 0 1px 0 rgba(0, 0, 0, .8);

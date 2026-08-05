@@ -45,7 +45,7 @@ export const FACTORY_BANK = [
   {
     name: 'Brass Ensemble',
     vintage: 0.35,
-    osc2detune: 0.620, // ~+6 cents, a slow ensemble beat
+    osc2detune: 0.580, // ~+8 cents, a slow ensemble beat
     osc1Saw: 1, osc1Pulse: 0,
     osc2Saw: 1, osc2Pulse: 0,
     cutoff: 0.34, resonance: 0.10, filterMod: 0.50,
@@ -59,7 +59,7 @@ export const FACTORY_BANK = [
   {
     name: 'Soft Horns',
     vintage: 0.40,
-    osc2detune: 0.580,
+    osc2detune: 0.550,
     osc1Saw: 1, osc2Saw: 1,
     cutoff: 0.36, resonance: 0.06, filterMod: 0.38,
     fAttack: 0.181, fDecay: 0.412, fSustain: 0.45, fRelease: 0.310,
@@ -70,7 +70,7 @@ export const FACTORY_BANK = [
   {
     name: 'Trumpet Section',
     vintage: 0.30,
-    osc2detune: 0.650,
+    osc2detune: 0.590,
     osc1Saw: 1, osc1Pulse: 0,
     osc2Saw: 0, osc2Pulse: 1,
     pulseWidth: 0.30,
@@ -84,7 +84,7 @@ export const FACTORY_BANK = [
   {
     name: 'Octave Brass',
     vintage: 0.35,
-    osc2detune: 0.540,
+    osc2detune: 0.530,
     osc1Saw: 1, osc2Saw: 1,
     osc2Freq: semi(12), // one octave up
     fOsc2: 1, // half level, so the octave sits under the fundamental
@@ -97,7 +97,7 @@ export const FACTORY_BANK = [
   {
     name: 'Brass Pad',
     vintage: 0.45,
-    osc2detune: 0.660,
+    osc2detune: 0.600,
     osc1Saw: 1, osc2Saw: 1,
     lfoRate: 0.30, lfoSine: 1, // ~0.5 Hz
     depth1: 0.10, d1Osc1: 1, d1Osc2: 1, // ~11 cents of vibrato on both
@@ -110,7 +110,7 @@ export const FACTORY_BANK = [
   {
     name: 'Big Band Stab',
     vintage: 0.30,
-    osc2detune: 0.600,
+    osc2detune: 0.560,
     osc1Saw: 1, osc2Saw: 1,
     cutoff: 0.22, resonance: 0.22, filterMod: 0.68,
     fAttack: 0.046, fDecay: 0.240, fSustain: 0.08, fRelease: 0.215,
@@ -122,7 +122,7 @@ export const FACTORY_BANK = [
   {
     name: 'Mellow Brass',
     vintage: 0.40,
-    osc2detune: 0.600,
+    osc2detune: 0.560,
     osc1Saw: 1, osc2Saw: 1,
     filterType: 1, // four-pole
     cutoff: 0.26, resonance: 0.05, filterMod: 0.42,
@@ -134,7 +134,7 @@ export const FACTORY_BANK = [
   {
     name: 'Brass Swell',
     vintage: 0.45,
-    osc2detune: 0.680,
+    osc2detune: 0.610,
     osc1Saw: 1, osc2Saw: 1,
     cutoff: 0.20, resonance: 0.12, filterMod: 0.55,
     fAttack: 0.493, fDecay: 0.531, fSustain: 0.55, fRelease: 0.448,
@@ -152,7 +152,7 @@ export const FACTORY_BANK = [
   {
     name: 'String Ensemble',
     vintage: 0.50,
-    osc2detune: 0.740, // ~+12 cents
+    osc2detune: 0.640, // ~+14 cents, a wide string chorus
     osc1Saw: 1, osc2Saw: 1,
     lfoRate: 0.28, lfoSine: 1,
     depth1: 0.10, d1Osc1: 1, d1Osc2: 1,
@@ -165,7 +165,7 @@ export const FACTORY_BANK = [
   {
     name: 'Warm PWM Pad',
     vintage: 0.45,
-    osc2detune: 0.580,
+    osc2detune: 0.550,
     osc1Saw: 0, osc1Pulse: 1,
     osc2Saw: 0, osc2Pulse: 1,
     pulseWidth: 0.12,
@@ -180,7 +180,7 @@ export const FACTORY_BANK = [
   {
     name: 'Choir Aahs',
     vintage: 0.40,
-    osc2detune: 0.660,
+    osc2detune: 0.600,
     osc1Saw: 0, osc1Pulse: 1,
     osc2Saw: 1, osc2Pulse: 0,
     pulseWidth: 0.55,
@@ -193,7 +193,7 @@ export const FACTORY_BANK = [
   {
     name: 'Vox Humana',
     vintage: 0.40,
-    osc2detune: 0.680,
+    osc2detune: 0.610,
     osc1Saw: 0, osc1Pulse: 1,
     osc2Saw: 0, osc2Pulse: 1,
     pulseWidth: 0.08, // close to a square, then swept by DEPTH 2
@@ -208,7 +208,7 @@ export const FACTORY_BANK = [
   {
     name: 'Analog Strings',
     vintage: 0.70, // heavier drift for a looser ensemble
-    osc2detune: 0.780, // ~+14 cents
+    osc2detune: 0.670, // ~+17 cents
     osc1Saw: 1, osc2Saw: 1,
     lfoRate: 0.32, lfoSine: 1,
     depth1: 0.12, d1Osc2: 1, // wobble on osc 2 only
@@ -221,7 +221,7 @@ export const FACTORY_BANK = [
   {
     name: 'Halo Pad',
     vintage: 0.35,
-    osc2detune: 0.560,
+    osc2detune: 0.540,
     osc1Saw: 1, osc1Pulse: 1, // both waveforms on = triangle
     osc2Saw: 1, osc2Pulse: 0,
     filterType: 1,
@@ -235,7 +235,7 @@ export const FACTORY_BANK = [
   {
     name: 'Glass Fifths',
     vintage: 0.30,
-    osc2detune: 0.520, // near-pure, so the fifth stays clean
+    osc2detune: 0.515, // near-pure, so the fifth stays clean
     osc1Saw: 1, osc1Pulse: 0,
     osc2Saw: 0, osc2Pulse: 1,
     osc2Freq: semi(7), // a fifth above
@@ -250,7 +250,7 @@ export const FACTORY_BANK = [
   {
     name: 'Slow Sweep Pad',
     vintage: 0.45,
-    osc2detune: 0.700,
+    osc2detune: 0.620,
     osc1Saw: 1, osc2Saw: 1,
     cutoff: 0.12, resonance: 0.35, filterMod: 0.80,
     fAttack: 0.630, fDecay: 0.669, fSustain: 0.45, fRelease: 0.531,
@@ -269,7 +269,7 @@ export const FACTORY_BANK = [
   {
     name: 'Mini Bass',
     vintage: 0.25,
-    osc2detune: 0.540,
+    osc2detune: 0.530,
     osc1Freq: oct(0),
     osc1Saw: 1, osc2Saw: 1,
     cutoff: 0.36, resonance: 0.30, filterMod: 0.55,
@@ -285,7 +285,7 @@ export const FACTORY_BANK = [
     vintage: 0.30,
     unison: 1,
     portamento: 0.05,
-    osc2detune: 0.560,
+    osc2detune: 0.540,
     osc1Saw: 0, osc1Pulse: 1,
     pulseWidth: 0.00, // fully counter-clockwise = 50 % square
     osc2Saw: 1, osc2Pulse: 0,
@@ -299,7 +299,7 @@ export const FACTORY_BANK = [
   {
     name: 'Funk Clav',
     vintage: 0.25,
-    osc2detune: 0.520,
+    osc2detune: 0.515,
     osc1Saw: 0, osc1Pulse: 1,
     osc2Saw: 0, osc2Pulse: 1,
     pulseWidth: 0.78, // ~15 % duty, thin and reedy
@@ -361,7 +361,7 @@ export const FACTORY_BANK = [
     vintage: 0.35,
     unison: 1,
     portamento: 0.18,
-    osc2detune: 0.660,
+    osc2detune: 0.600,
     osc1Saw: 1, osc2Saw: 1,
     lfoRate: 0.70, lfoSine: 1, // ~3.9 Hz vibrato
     depth1: 0.13, d1Osc1: 1, d1Osc2: 1,
@@ -375,7 +375,7 @@ export const FACTORY_BANK = [
   {
     name: 'Reso Bass',
     vintage: 0.25,
-    osc2detune: 0.540,
+    osc2detune: 0.530,
     osc1Saw: 1, osc1Pulse: 0,
     osc2Saw: 0, osc2Pulse: 1,
     pulseWidth: 0.50,
@@ -397,7 +397,7 @@ export const FACTORY_BANK = [
   {
     name: 'Sample & Hold',
     vintage: 0.35,
-    osc2detune: 0.600,
+    osc2detune: 0.560,
     osc1Saw: 1, osc2Saw: 1,
     lfoSine: 0, lfoSH: 1, lfoRate: 0.55, // ~2 Hz
     depth1: 0.30, d1Osc1: 1, d1Osc2: 1, // ~1 semitone of random pitch
@@ -410,7 +410,7 @@ export const FACTORY_BANK = [
   {
     name: 'Random Filter',
     vintage: 0.35,
-    osc2detune: 0.640,
+    osc2detune: 0.580,
     osc1Saw: 0, osc1Pulse: 1,
     pulseWidth: 0.45,
     osc2Saw: 1, osc2Pulse: 0,
@@ -451,7 +451,7 @@ export const FACTORY_BANK = [
   {
     name: 'Filter Sweep',
     vintage: 0.40,
-    osc2detune: 0.720,
+    osc2detune: 0.640,
     osc1Saw: 1, osc2Saw: 1,
     cutoff: 0.08, resonance: 0.50, filterMod: 0.95,
     fAttack: 0.630, fDecay: 0.669, fSustain: 0.30, fRelease: 0.493,
@@ -492,7 +492,7 @@ export const FACTORY_BANK = [
     name: 'Tape Warble',
     vintage: 1.00, // maximum drift
     portamento: 0.12,
-    osc2detune: 0.880, // ~+19 cents, deliberately out
+    osc2detune: 0.800, // ~+30 cents, deliberately out
     osc1Saw: 1, osc2Saw: 1,
     lfoSine: 1, lfoRate: 0.06, // ~0.13 Hz
     depth1: 0.10, d1Osc2: 1, // slow wow on osc 2 only
