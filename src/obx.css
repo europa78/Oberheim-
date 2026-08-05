@@ -944,8 +944,7 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
 .perf-cap,
 .perf-btn-cap,
 .perf-panel .group-cap,
-.perf-panel .led-caps,
-.perf-sublabels {
+.perf-panel .led-caps {
   color: #ededee;
   text-shadow: 0 1px 0 rgba(0, 0, 0, .9);
 }
@@ -1140,15 +1139,6 @@ button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
   box-shadow: 0 1px 0 rgba(0, 0, 0, .8);
 }
 
-.perf-sublabels {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  font-size: calc(8 * var(--u));
-  font-stretch: condensed;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
 
 
 /* ===========================================================================
