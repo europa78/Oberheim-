@@ -8,6 +8,7 @@ node test/smoke.mjs                # panel layout + all 32 programs render
 node test/dsp.mjs                  # spectral checks on the synthesis engine
 node test/alias.mjs                # alias-to-signal ratio, windowed FFT
 node test/interact.mjs             # programmer, keyboard routing, switches
+node test/bundle.mjs               # single-file build, incl. file:// loading
 ```
 
 `smoke.mjs` builds the panel, asserts that nothing overflows its section and
@@ -31,3 +32,10 @@ the host rate, shows up immediately as a worse ratio.
 programs, MANUAL mode, multi-state switch cycling and LED states, knob
 detents, split/double voice routing, HOLD, the manual's CHORD transposition
 rule, and persistence. It exits non-zero on any failure.
+
+`bundle.mjs` rebuilds `obx.html` (so it can never pass against a stale bundle)
+and loads it over `http://` and from `file://`, checking that it boots, is
+styled, makes sound, logs nothing, contains no external references, and renders
+within 25 % of the modular build's throughput. The `file://` case is the point
+of the bundle: a Blob URL has an opaque origin there and the worklet loader
+rejects it, so the build falls back to a `data:` URL.

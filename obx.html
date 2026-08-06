@@ -1,0 +1,4245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OB-X — Polyphonic Synthesizer</title>
+<style>
+/* ===========================================================================
+   OB-X — front panel stylesheet
+   ---------------------------------------------------------------------------
+   Everything is drawn with gradients, shadows and system fonts. No images,
+   no @import, no web fonts, no data URIs.
+
+   Sizing model
+   ------------
+   A single root unit `--u` is derived from the viewport with clamp(). All
+   instrument geometry is expressed as `calc(<n> * var(--u))`, where <n> is a
+   "design pixel" measured off the reference photograph (the instrument is
+   1800 design px wide). At >=1820px viewport --u pins to 1px and the panel
+   centres; at <=~910px it pins to 0.5px and the page scrolls horizontally
+   rather than reflowing the instrument into something unrecognisable.
+
+   Sections
+   --------
+   01  Reset, page chrome, theming
+   02  Root metrics and palette
+   03  Instrument shell — cheeks, chassis, brand strip
+   04  Control surface grid (grid-template-areas)
+   05  Sub-panels — face, bevel, panel names
+   06  Rows, columns and captions
+   07  Knob widget
+   08  Rocker switch widget + LEDs
+   09  Panel-specific layout
+   10  Programmer LCD
+   11  Performance panel
+   12  Keybed
+   13  Boot overlay, tooltip, accessibility
+   =========================================================================== */
+
+
+/* ===========================================================================
+   01  Reset, page chrome, theming
+   =========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+:root {
+  /* Page backdrop only — the instrument itself never changes appearance. */
+  --page-bg-a: #e4e6ea;
+  --page-bg-b: #c6cad2;
+  --page-fg: #1b1e24;
+  --page-vignette: rgba(0, 0, 0, .18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page-bg-a: #14161a;
+    --page-bg-b: #06070a;
+    --page-fg: #e6e9ef;
+    --page-vignette: rgba(0, 0, 0, .55);
+  }
+}
+
+:root[data-theme="light"] {
+  --page-bg-a: #e4e6ea;
+  --page-bg-b: #c6cad2;
+  --page-fg: #1b1e24;
+  --page-vignette: rgba(0, 0, 0, .18);
+}
+
+:root[data-theme="dark"] {
+  --page-bg-a: #14161a;
+  --page-bg-b: #06070a;
+  --page-fg: #e6e9ef;
+  --page-vignette: rgba(0, 0, 0, .55);
+}
+
+html { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100%;
+  padding: calc(24 * var(--u)) 0;
+  color: var(--page-fg);
+  background:
+    radial-gradient(120% 90% at 50% 0%, transparent 40%, var(--page-vignette) 100%),
+    linear-gradient(178deg, var(--page-bg-a), var(--page-bg-b));
+  background-attachment: fixed;
+  font-family: var(--face);
+  overflow-x: auto;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Global drag affordance — set by the knob widget while a pointer drag runs. */
+body.dragging,
+body.dragging * {
+  cursor: ns-resize !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+
+/* ===========================================================================
+   02  Root metrics and palette
+   =========================================================================== */
+
+:root {
+  /* 1800 design px wide instrument; 0.05494vw ~= 100vw / 1820 (scrollbar slack) */
+  --u: clamp(0.5px, 0.05494vw, 1px);
+
+  /* Type stacks — system only. */
+  --face: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", system-ui, sans-serif;
+  --face-brand: Georgia, "Times New Roman", "Liberation Serif", serif;
+  --face-lcd: "DejaVu Sans", "Segoe UI", Tahoma, Verdana, sans-serif;
+
+  /* Cabinet */
+  --wood-1: #8a5a31;
+  --wood-2: #6b4224;
+  --wood-3: #4e2f18;
+  --black-1: #26262a;
+  --black-2: #17171a;
+  --black-3: #101012;
+
+  /* Sub-panel face (cool light blue-grey brushed metal) */
+  --face-hi: #d2d9e3;
+  --face-mid: #c2cbd9;
+  --face-lo: #b4becf;
+  --face-ink: #191d24;
+
+  /* Knobs / caps */
+  --cap-bg: #0d0e10;
+  --cap-ink: #f1f2f4;
+
+  /* Panel geometry */
+  --gutter: calc(13 * var(--u));
+  --panel-pad-x: calc(11 * var(--u));
+  --panel-pad-t: calc(13 * var(--u));
+}
+
+
+/* ===========================================================================
+   03  Instrument shell — cheeks, chassis, brand strip
+   =========================================================================== */
+
+.obx {
+  display: grid;
+  grid-template-columns: calc(40 * var(--u)) minmax(0, 1fr) calc(40 * var(--u));
+  width: calc(1800 * var(--u));
+  min-width: calc(1800 * var(--u));
+  margin: 0 auto;
+  border-radius: calc(6 * var(--u));
+  filter: drop-shadow(0 calc(14 * var(--u)) calc(26 * var(--u)) rgba(0, 0, 0, .45));
+}
+
+/* --- wood end cheeks ----------------------------------------------------- */
+.cheek {
+  border-radius: calc(5 * var(--u));
+  background:
+    repeating-linear-gradient(91deg,
+      rgba(0, 0, 0, .20) 0 1px,
+      rgba(255, 255, 255, .045) 1px 3px,
+      rgba(0, 0, 0, .10) 3px 6px,
+      rgba(255, 255, 255, .02) 6px 11px),
+    repeating-linear-gradient(87deg,
+      rgba(0, 0, 0, .10) 0 5px,
+      transparent 5px 17px),
+    linear-gradient(102deg, var(--wood-2) 0%, var(--wood-1) 26%, var(--wood-3) 62%, #7d4e2a 100%);
+  box-shadow:
+    inset 0 calc(2 * var(--u)) 0 rgba(255, 255, 255, .16),
+    inset 0 calc(-3 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, .5),
+    inset calc(-2 * var(--u)) 0 calc(4 * var(--u)) rgba(0, 0, 0, .35);
+}
+
+.cheek-left  { box-shadow: inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,.16), inset calc(-3 * var(--u)) 0 calc(7 * var(--u)) rgba(0,0,0,.45); }
+.cheek-right { box-shadow: inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,.16), inset calc(3 * var(--u)) 0 calc(7 * var(--u)) rgba(0,0,0,.45); }
+
+/* --- matte black textured chassis ---------------------------------------- */
+.chassis {
+  position: relative;
+  padding: calc(26 * var(--u)) calc(24 * var(--u)) calc(20 * var(--u));
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(255, 255, 255, .016) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-45deg,
+      rgba(0, 0, 0, .28) 0 1px, transparent 1px 3px),
+    radial-gradient(140% 100% at 50% -10%, rgba(255, 255, 255, .07), transparent 60%),
+    linear-gradient(180deg, var(--black-1) 0%, var(--black-2) 38%, var(--black-3) 100%);
+  box-shadow:
+    inset 0 calc(1 * var(--u)) 0 rgba(255, 255, 255, .10),
+    inset 0 calc(-2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .7);
+}
+
+/* --- brand strip --------------------------------------------------------- */
+.brand-strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(10 * var(--u));
+  height: calc(58 * var(--u));
+  padding: 0 calc(18 * var(--u)) 0 0;
+}
+
+.brand-mark {
+  display: block;
+  width: calc(56 * var(--u));
+  height: calc(34 * var(--u));
+}
+
+.brand-glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #f4f5f7;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .8));
+}
+
+.brand-name {
+  font-family: var(--face-brand);
+  font-weight: 700;
+  font-size: calc(40 * var(--u));
+  line-height: 1;
+  letter-spacing: calc(0.4 * var(--u));
+  color: #fafbfc;
+  text-shadow:
+    0 calc(1 * var(--u)) 0 rgba(0, 0, 0, .8),
+    0 calc(3 * var(--u)) calc(7 * var(--u)) rgba(0, 0, 0, .6);
+}
+
+
+/* ===========================================================================
+   04  Control surface grid
+   ---------------------------------------------------------------------------
+   MASTER, CONTROL and MODULATION are full-height columns (they span both
+   rows, exactly as on the real instrument); OSCILLATORS, FILTER and
+   ENVELOPES sit on the top row with KEYBOARD and PROGRAMMER beneath them.
+   Column 5 exists purely so PROGRAMMER can start part-way under
+   OSCILLATORS, matching the photograph.
+   =========================================================================== */
+
+.control-surface {
+  position: relative;
+  display: grid;
+  /* MASTER/CONTROL only ever hold two knobs abreast, so they give width back
+     to MODULATION, which needs three equal columns wide enough for the
+     "DESTINATION" captions. Column 5 is a sliver that lets PROGRAMMER start
+     part-way under OSCILLATORS, as in the photograph. */
+  grid-template-columns: 100fr 100fr 200fr 125fr 65fr 195fr 226fr;
+  /* Row proportions follow the photograph (top row ~1.7x the lower row); the
+     minmax() lower bounds hold the ratio while letting content grow. */
+  grid-template-rows:
+    minmax(calc(196 * var(--u)), auto)
+    minmax(calc(124 * var(--u)), auto);
+  grid-template-areas:
+    "master control modulation oscillators oscillators filter     envelopes"
+    "master control modulation keyboard    programmer  programmer programmer";
+  gap: var(--gutter);
+}
+
+.panel-master      { grid-area: master; }
+.panel-control     { grid-area: control; }
+.panel-modulation  { grid-area: modulation; }
+.panel-oscillators { grid-area: oscillators; }
+.panel-filter      { grid-area: filter; }
+.panel-envelopes   { grid-area: envelopes; }
+.panel-keyboard    { grid-area: keyboard; }
+.panel-programmer  { grid-area: programmer; }
+
+
+/* ===========================================================================
+   05  Sub-panels — brushed light blue-grey faces
+   =========================================================================== */
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid #23262c;
+  border-radius: calc(3 * var(--u));
+  background:
+    /* fine vertical brushing */
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, .050) 0 1px,
+      rgba(0, 0, 0, .030) 1px 2px,
+      transparent 2px 4px),
+    /* broad sheen */
+    linear-gradient(163deg,
+      var(--face-hi) 0%,
+      var(--face-mid) 34%,
+      var(--face-lo) 63%,
+      #c7cfdb 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .65),
+    inset 0 -1px 0 rgba(0, 0, 0, .30),
+    inset 1px 0 0 rgba(255, 255, 255, .30),
+    inset -1px 0 0 rgba(0, 0, 0, .20),
+    0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, .55);
+}
+
+.panel-inner {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  padding: var(--panel-pad-t) var(--panel-pad-x) calc(4 * var(--u));
+  min-width: 0;
+}
+
+.panel-name {
+  flex: 0 0 auto;
+  padding: calc(3 * var(--u)) 0 calc(8 * var(--u));
+  text-align: center;
+  font-size: calc(16 * var(--u));
+  font-weight: 400;
+  font-stretch: condensed;
+  letter-spacing: calc(2.4 * var(--u));
+  color: #fdfdfe;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, .55),
+    0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .40);
+}
+
+
+/* ===========================================================================
+   06  Rows, columns and captions
+   =========================================================================== */
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(9 * var(--u));
+}
+
+.row.knobs {
+  width: 100%;
+  justify-content: space-around;
+  gap: calc(4 * var(--u));
+}
+
+.row.knobs.single { justify-content: center; }
+
+.row.switches {
+  gap: calc(8 * var(--u));
+  align-items: flex-end;
+}
+
+.row.pair {
+  gap: calc(7 * var(--u));
+  align-items: flex-end;
+}
+
+.row.progs { gap: calc(9 * var(--u)); }
+
+.ctl { flex: 0 0 auto; }
+
+/* Small dark captions printed straight onto the panel face. */
+.col-cap,
+.group-cap,
+.group-sub,
+.osc-num {
+  font-size: calc(11 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.9 * var(--u));
+  color: #1e232b;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .45);
+}
+
+.col-cap {
+  font-size: calc(12 * var(--u));
+  letter-spacing: calc(0.8 * var(--u));
+}
+
+.group-cap { font-size: calc(9.5 * var(--u)); }
+
+.osc-num {
+  font-size: calc(15 * var(--u));
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+/* "— TRIANGLE —" style sub-caption with rules either side. */
+.group-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+  width: 100%;
+  font-size: calc(9 * var(--u));
+}
+
+.group-sub::before,
+.group-sub::after {
+  content: "";
+  flex: 1 1 auto;
+  min-width: calc(8 * var(--u));
+  height: 1px;
+  background: rgba(24, 30, 40, .55);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .4);
+}
+
+.sw-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(4 * var(--u));
+}
+
+/* Envelope panel titles (this panel carries no .panel-name). */
+.env-title {
+  font-size: calc(15 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(2 * var(--u));
+  color: #fdfdfe;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .5), 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .35);
+}
+
+.env-title.top { margin-bottom: calc(-3 * var(--u)); }
+.env-title.bottom { margin-top: calc(-3 * var(--u)); }
+
+
+/* ===========================================================================
+   07  Knob widget
+   ---------------------------------------------------------------------------
+   .knob-ctl > [.led] + .cap + .knob > (.knob-ticks > i.tick) + .knob-body >
+   .knob-pointer
+
+   Ticks: JS writes an inline `transform: rotate(Ndeg) translateY(-50%)`, so
+   the ring radius has to come from transform-origin. With the tick centred on
+   the knob (left/top 50%), margin-top:-R and transform-origin:50% R, the
+   composite maps each tick onto a circle of radius R about the knob centre.
+   =========================================================================== */
+
+.knob-ctl {
+  /* unitless design-pixel metrics, multiplied by --u below */
+  --kb: 42;    /* knob body diameter   */
+  --kr: 28;    /* tick ring radius     */
+  --kbox: 62;  /* widget box           */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  width: calc(var(--kbox) * var(--u));
+}
+
+.knob-ctl.size-sm { --kb: 34; --kr: 23; --kbox: 52; }
+.knob-ctl.size-xs { --kb: 26; --kr: 18; --kbox: 40; }
+
+/* --- black label plate --------------------------------------------------- */
+.cap {
+  padding: calc(2 * var(--u)) calc(5 * var(--u));
+  border-radius: calc(1.5 * var(--u));
+  background: linear-gradient(180deg, #26282c 0%, var(--cap-bg) 45%, #060607 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .18),
+    0 1px 0 rgba(255, 255, 255, .45),
+    0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .45);
+  color: var(--cap-ink);
+  font-size: calc(8 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.5 * var(--u));
+  line-height: 1.35;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cap.tiny {
+  font-size: calc(7 * var(--u));
+  padding: calc(1.5 * var(--u)) calc(4 * var(--u));
+}
+
+.knob-led { margin-bottom: calc(1 * var(--u)); }
+
+/* --- knob proper --------------------------------------------------------- */
+.knob {
+  position: relative;
+  width: calc(var(--kbox) * var(--u));
+  height: calc(var(--kbox) * var(--u));
+  border-radius: 50%;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.knob-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.knob-ticks .tick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(1.8 * var(--u));
+  height: calc(5 * var(--u));
+  margin-left: calc(-0.9 * var(--u));
+  margin-top: calc(var(--kr) * var(--u) * -1);
+  transform-origin: 50% calc(var(--kr) * var(--u));
+  border-radius: calc(1 * var(--u));
+  background: rgba(22, 26, 33, .78);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .40);
+}
+
+.knob-body {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--kb) * var(--u));
+  height: calc(var(--kb) * var(--u));
+  margin-left: calc(var(--kb) * var(--u) / -2);
+  margin-top: calc(var(--kb) * var(--u) / -2);
+  border-radius: 50%;
+  background:
+    /* top-left specular highlight */
+    radial-gradient(circle at 33% 24%,
+      rgba(255, 255, 255, .34) 0%,
+      rgba(255, 255, 255, .10) 26%,
+      rgba(255, 255, 255, 0) 54%),
+    /* fluted skirt */
+    repeating-conic-gradient(from 0deg,
+      rgba(255, 255, 255, .055) 0deg 3.6deg,
+      rgba(0, 0, 0, .16) 3.6deg 7.2deg),
+    /* moulded body */
+    radial-gradient(circle at 50% 42%, #4b4744 0%, #322e2b 46%, #201d1b 72%, #0e0d0d 100%);
+  box-shadow:
+    inset 0 calc(1.5 * var(--u)) calc(2 * var(--u)) rgba(255, 255, 255, .14),
+    inset 0 calc(-3 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .65),
+    inset 0 0 0 1px rgba(0, 0, 0, .55),
+    0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .55);
+}
+
+/* JS rotates this element; it is the full body box so the default
+   50%/50% transform-origin is the knob centre. */
+.knob-pointer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.knob-pointer::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(var(--kb) * var(--u) * 0.055);
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: calc(var(--kb) * var(--u) * 0.105) solid transparent;
+  border-right: calc(var(--kb) * var(--u) * 0.105) solid transparent;
+  border-bottom: calc(var(--kb) * var(--u) * 0.185) solid #f5f4f0;
+  filter: drop-shadow(0 1px calc(1 * var(--u)) rgba(0, 0, 0, .75));
+}
+
+
+/* ===========================================================================
+   08  Rocker switch widget + LEDs
+   =========================================================================== */
+
+.sw-ctl {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--u));
+  width: calc(34 * var(--u));
+}
+
+.sw-ctl.wide { width: calc(46 * var(--u)); }
+
+/* Tiny FIL / AMP style captions on their own line above the cap. One equal
+   grid track per caption, spilling a little either side of the cap so each
+   caption centres over its own LED and neighbours never run together
+   ("HALF FULL", not "HALFFULL"). */
+.led-caps {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  width: calc(100% + 6 * var(--u));
+  margin: 0 calc(-3 * var(--u)) calc(1 * var(--u));
+  font-size: calc(6.5 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.2 * var(--u));
+  line-height: 1.2;
+  color: #1d222a;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .45);
+  white-space: nowrap;
+}
+
+.led-cap {
+  display: block;
+  text-align: center;
+  overflow: visible;
+}
+
+button.rocker {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: calc(44 * var(--u));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: calc(2.5 * var(--u));
+  cursor: pointer;
+  overflow: visible;
+  font: inherit;
+  color: inherit;
+  background:
+    linear-gradient(180deg,
+      #35353a 0%,
+      #1d1d21 10%,
+      #131316 46%,
+      #0c0c0e 52%,
+      #17171a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .22),
+    inset 0 calc(-2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .75),
+    inset calc(1 * var(--u)) 0 calc(2 * var(--u)) rgba(255, 255, 255, .05),
+    0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .6);
+}
+
+button.rocker:active { transform: translateY(calc(0.5 * var(--u))); }
+
+/* Centred on max-content rather than stretched edge-to-edge, so a long legend
+   spills a hair onto the panel instead of being clipped by the cap. */
+.sw-label {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  top: calc(3 * var(--u));
+  width: max-content;
+  transform: translateX(-50%);
+  font-size: calc(7.5 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.2 * var(--u));
+  line-height: 1;
+  color: #eceded;
+  text-transform: uppercase;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .9);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.leds {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(15 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(7 * var(--u));
+  pointer-events: none;
+}
+
+.leds.n1 { gap: 0; }
+/* Matches the two .led-cap track centres above, so caption sits over LED. */
+.leds.n2 { gap: calc(14 * var(--u)); }
+
+/* glossy lower face / seam across the bottom third of the cap */
+.rocker-face {
+  position: absolute;
+  left: calc(3 * var(--u));
+  right: calc(3 * var(--u));
+  bottom: calc(3 * var(--u));
+  height: calc(17 * var(--u));
+  border-radius: calc(1.5 * var(--u));
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, .34) 0%,
+    rgba(255, 255, 255, .09) 14%,
+    rgba(255, 255, 255, .02) 40%,
+    rgba(0, 0, 0, .38) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .40);
+  pointer-events: none;
+}
+
+/* --- LEDs ---------------------------------------------------------------- */
+.led {
+  display: block;
+  flex: 0 0 auto;
+  width: calc(6 * var(--u));
+  height: calc(6 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #7c2320 0%, #45100e 62%, #250807 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, .70),
+    inset 0 calc(-1 * var(--u)) calc(1 * var(--u)) rgba(0, 0, 0, .6);
+}
+
+.led-amber {
+  background: radial-gradient(circle at 36% 30%, #6f5b18 0%, #3a2d09 62%, #1e1706 100%);
+}
+
+.led.on {
+  background: radial-gradient(circle at 38% 32%, #fff2ef 0%, #ff5136 26%, #f01508 55%, #a90703 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 0, 0, .5),
+    0 0 calc(3 * var(--u)) calc(1.4 * var(--u)) rgba(255, 48, 24, .90),
+    0 0 calc(9 * var(--u)) calc(3.5 * var(--u)) rgba(255, 36, 12, .42),
+    0 0 calc(18 * var(--u)) calc(6 * var(--u)) rgba(255, 40, 16, .18);
+}
+
+.led-amber.on {
+  background: radial-gradient(circle at 38% 32%, #fffce9 0%, #ffd44f 28%, #ffb100 58%, #b06d00 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(110, 66, 0, .5),
+    0 0 calc(3 * var(--u)) calc(1.4 * var(--u)) rgba(255, 190, 40, .85),
+    0 0 calc(9 * var(--u)) calc(3.5 * var(--u)) rgba(255, 170, 20, .35);
+}
+
+
+/* ===========================================================================
+   09  Panel-specific layout
+   =========================================================================== */
+
+/* --- MASTER / CONTROL (tall left columns) -------------------------------- */
+.panel-master .panel-inner,
+.panel-control .panel-inner {
+  gap: calc(12 * var(--u));
+  justify-content: flex-start;
+}
+
+.panel-master .row.knobs.single,
+.panel-control .row.knobs.single {
+  margin-top: calc(16 * var(--u));
+}
+
+/* --- MODULATION ---------------------------------------------------------- */
+.panel-modulation .panel-inner {
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: calc(4 * var(--u));
+  padding-left: calc(6 * var(--u));
+  padding-right: calc(6 * var(--u));
+}
+
+/* flex-basis:0 + equal grow keeps the three columns exactly the same width */
+.mod-col {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-start;
+  gap: calc(11 * var(--u));
+  padding: 0 calc(4 * var(--u));
+}
+
+.mod-col + .mod-col::before {
+  content: "";
+  position: absolute;
+  left: calc(-2 * var(--u));
+  top: calc(20 * var(--u));
+  bottom: calc(-2 * var(--u));
+  width: calc(1.5 * var(--u));
+  border-radius: 1px;
+  background: rgba(20, 25, 33, .60);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, .35);
+}
+
+/* --- OSCILLATORS --------------------------------------------------------- */
+.panel-oscillators .panel-inner { gap: calc(8 * var(--u)); }
+
+.osc-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--u));
+}
+
+.panel-oscillators .row.switches {
+  width: 100%;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: calc(6 * var(--u));
+}
+
+.sw-group.waveform { min-width: calc(80 * var(--u)); }
+.sw-group.xmod .row.pair { align-items: flex-end; }
+
+/* --- FILTER -------------------------------------------------------------- */
+.panel-filter .panel-inner { gap: calc(10 * var(--u)); }
+.panel-filter .row.switches { gap: calc(11 * var(--u)); }
+
+/* --- ENVELOPES ----------------------------------------------------------- */
+.panel-envelopes .panel-inner {
+  gap: calc(14 * var(--u));
+  justify-content: center;
+  padding-top: calc(12 * var(--u));
+  padding-bottom: calc(14 * var(--u));
+}
+
+.row.knobs.adsr {
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 calc(6 * var(--u));
+}
+
+/* Four knobs abreast: a touch smaller so the two ADSR rows plus both titles
+   keep the envelopes panel the same height as its neighbours. */
+.row.knobs.adsr .knob-ctl { --kb: 40; --kr: 27; --kbox: 60; }
+
+/* --- KEYBOARD ------------------------------------------------------------ */
+.panel-keyboard .panel-inner {
+  justify-content: flex-start;
+  padding-top: calc(10 * var(--u));
+}
+
+.panel-keyboard .row.switches { gap: calc(9 * var(--u)); }
+
+/* --- PROGRAMMER ---------------------------------------------------------- */
+.panel-programmer .panel-inner {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(10 * var(--u));
+  padding: calc(10 * var(--u)) calc(14 * var(--u)) calc(2 * var(--u));
+}
+
+.panel-programmer .row.switches.lead,
+.panel-programmer .row.switches.trail {
+  gap: calc(9 * var(--u));
+  align-items: center;
+}
+
+.panel-programmer .row.progs {
+  flex: 1 1 auto;
+  justify-content: space-around;
+  align-items: center;
+}
+
+
+/* ===========================================================================
+   10  Programmer LCD
+   =========================================================================== */
+
+.lcd-block {
+  display: flex;
+  align-items: center;
+  gap: calc(7 * var(--u));
+}
+
+.lcd-knob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--u));
+}
+
+.lcd {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(1 * var(--u));
+  width: calc(118 * var(--u));
+  height: calc(50 * var(--u));
+  padding: calc(3 * var(--u)) calc(5 * var(--u));
+  border-radius: calc(2 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .07), transparent 30%),
+    linear-gradient(180deg, #0a1420 0%, #061019 55%, #030a12 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, .8),
+    inset 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .8),
+    0 1px 0 rgba(255, 255, 255, .35);
+  font-family: var(--face-lcd);
+  color: #a8d8f6;
+  overflow: hidden;
+}
+
+.lcd-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(4 * var(--u));
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.lcd-tag {
+  font-size: calc(6.5 * var(--u));
+  letter-spacing: calc(0.3 * var(--u));
+  color: #5d90b6;
+}
+
+.lcd-tag.right { text-align: right; }
+
+.lcd-text {
+  font-size: calc(12 * var(--u));
+  font-weight: 700;
+  letter-spacing: calc(0.2 * var(--u));
+  color: #cfe9ff;
+  text-shadow: 0 0 calc(4 * var(--u)) rgba(120, 190, 255, .55);
+}
+
+.lcd-text.num { font-size: calc(13 * var(--u)); }
+
+.lcd-name {
+  display: block;
+  font-size: calc(10 * var(--u));
+  color: #9fd0ef;
+  text-shadow: 0 0 calc(3 * var(--u)) rgba(110, 180, 250, .45);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* ===========================================================================
+   11  Performance panel (black, left of the keybed)
+   =========================================================================== */
+
+.lower-deck {
+  display: grid;
+  grid-template-columns: calc(278 * var(--u)) minmax(0, 1fr);
+  align-items: stretch;
+  height: calc(284 * var(--u));
+}
+
+.perf-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(4 * var(--u));
+  padding: calc(12 * var(--u)) calc(10 * var(--u)) calc(8 * var(--u));
+  border-radius: calc(2 * var(--u)) 0 0 calc(2 * var(--u));
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, .014) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #1c1c1f 0%, #131315 55%, #0d0d0f 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+/* Perf panel labels are white-on-black rather than dark-on-metal. */
+.perf-panel .sw-label,
+.perf-cap,
+.perf-btn-cap,
+.perf-panel .group-cap,
+.perf-panel .led-caps {
+  color: #ededee;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .9);
+}
+
+/* On the perf panel the legend is silk-screened on the chassis, above the cap
+   — not printed on the cap itself. Absolute positioning keeps long legends
+   from widening the flex track. */
+.perf-panel .rocker > .sw-label {
+  top: calc(-11 * var(--u));
+  font-size: calc(9 * var(--u));
+}
+
+/* When a switch already carries LED captions above it (MODE: Mod / Arp) the
+   legend drops below the cap instead, as on the instrument. */
+.perf-panel .sw-ctl:has(.led-caps) .rocker > .sw-label {
+  top: auto;
+  bottom: calc(-11 * var(--u));
+}
+
+.perf-panel .sw-ctl { width: calc(30 * var(--u)); }
+.perf-panel button.rocker { height: calc(34 * var(--u)); }
+.perf-panel .leds { top: calc(9 * var(--u)); }
+.perf-panel .leds.n2 { gap: calc(12 * var(--u)); }
+.perf-panel .rocker-face { height: calc(13 * var(--u)); }
+.perf-panel .led-caps { font-size: calc(7 * var(--u)); }
+
+.perf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(6 * var(--u));
+  width: 100%;
+}
+
+.perf-top { align-items: flex-start; padding-top: calc(9 * var(--u)); }
+
+.perf-cell {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(8 * var(--u));
+}
+
+.perf-cell.perf-lu { gap: calc(10 * var(--u)); }
+
+.perf-cap {
+  font-size: calc(8 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.5 * var(--u));
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.perf-mid {
+  align-items: center;
+  padding: calc(6 * var(--u)) 0 calc(14 * var(--u));
+}
+
+.perf-mid .perf-cell {
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6 * var(--u));
+}
+
+/* --- bender well --------------------------------------------------------- */
+.bender {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(78 * var(--u));
+  height: calc(86 * var(--u));
+  border-radius: calc(3 * var(--u));
+  background:
+    linear-gradient(180deg, #050506 0%, #0b0b0d 45%, #17171a 100%);
+  box-shadow:
+    inset 0 calc(3 * var(--u)) calc(7 * var(--u)) rgba(0, 0, 0, .95),
+    inset 0 calc(-2 * var(--u)) calc(3 * var(--u)) rgba(255, 255, 255, .08),
+    inset calc(3 * var(--u)) 0 calc(6 * var(--u)) rgba(0, 0, 0, .8),
+    inset calc(-3 * var(--u)) 0 calc(6 * var(--u)) rgba(0, 0, 0, .8),
+    0 1px 0 rgba(255, 255, 255, .10);
+}
+
+.bender-lever {
+  position: absolute;
+  left: calc(-4 * var(--u));
+  right: calc(-4 * var(--u));
+  top: 46%;
+  height: calc(15 * var(--u));
+  border-radius: calc(2 * var(--u));
+  cursor: ew-resize;
+  touch-action: none;
+  background: linear-gradient(180deg, #56565a 0%, #3a3a3e 34%, #232326 68%, #131315 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .32),
+    inset 0 calc(-1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .8),
+    0 calc(3 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, .7);
+}
+
+/* --- bottom groups ------------------------------------------------------- */
+.perf-bot {
+  align-items: flex-end;
+  gap: calc(6 * var(--u));
+  padding-bottom: calc(2 * var(--u));
+}
+
+.perf-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  gap: calc(4 * var(--u));
+}
+
+.perf-group.arp { flex: 1 1 auto; }
+
+/* Extra spacing so the wide "OSC 2 ONLY" / "AMOUNT" legends clear each other. */
+.perf-group.bend .perf-btns { gap: calc(17 * var(--u)); }
+.perf-group.bend .perf-btn-cap,
+.perf-group.transpose .perf-btn-cap {
+  font-size: calc(6.5 * var(--u));
+  letter-spacing: 0;
+}
+
+.perf-btns {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(4 * var(--u));
+}
+
+/* Fixed-width cells: the legend is absolutely placed so that wide labels
+   ("OSC 2 ONLY") crowd their neighbours the way the silk-screen does instead
+   of stretching the row. */
+.perf-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(24 * var(--u));
+  padding-top: calc(11 * var(--u));
+}
+
+.perf-btn-cap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: calc(8 * var(--u));
+  font-stretch: condensed;
+  letter-spacing: calc(0.3 * var(--u));
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* BEND and TRANSPOSE print their legends beneath the buttons. */
+.perf-group.bend .perf-btn,
+.perf-group.transpose .perf-btn {
+  padding-top: 0;
+  padding-bottom: calc(11 * var(--u));
+}
+
+.perf-group.bend .perf-btn-cap,
+.perf-group.transpose .perf-btn-cap {
+  top: auto;
+  bottom: 0;
+}
+
+.perf-panel .perf-btn .sw-ctl { width: calc(24 * var(--u)); }
+.perf-panel .perf-btn button.rocker { height: calc(30 * var(--u)); }
+.perf-panel .perf-btn .leds { top: calc(7 * var(--u)); }
+.perf-panel .perf-btn .rocker-face { height: calc(11 * var(--u)); }
+
+/* group headings with rules either side */
+.group-cap.rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(4 * var(--u));
+  width: 100%;
+  font-size: calc(8 * var(--u));
+  letter-spacing: calc(0.5 * var(--u));
+  white-space: nowrap;
+}
+
+.group-cap.rule::before,
+.group-cap.rule::after {
+  content: "";
+  flex: 1 1 auto;
+  min-width: calc(5 * var(--u));
+  height: calc(1.5 * var(--u));
+  background: #d8d9db;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .8);
+}
+
+
+
+/* ===========================================================================
+   12  Keybed
+   =========================================================================== */
+
+.keybed {
+  position: relative;
+  height: 100%;
+  padding: calc(6 * var(--u)) calc(6 * var(--u)) calc(8 * var(--u)) 0;
+  background: linear-gradient(180deg, #141416 0%, #0c0c0e 100%);
+  overflow: hidden;
+}
+
+.whites {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: calc(1.2 * var(--u));
+  height: 100%;
+}
+
+.blacks {
+  position: absolute;
+  left: 0;
+  right: calc(6 * var(--u));
+  top: calc(6 * var(--u));
+  bottom: calc(8 * var(--u));
+  pointer-events: none;
+}
+
+.key { touch-action: none; }
+
+.key.white {
+  position: relative;
+  border-radius: 0 0 calc(3 * var(--u)) calc(3 * var(--u));
+  background: linear-gradient(180deg, #e9eae6 0%, #f7f8f5 12%, #fdfdfb 62%, #e6e7e2 96%, #cfd0cb 100%);
+  box-shadow:
+    inset 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, .28),
+    inset calc(-1.5 * var(--u)) 0 calc(2 * var(--u)) rgba(0, 0, 0, .18),
+    inset calc(1 * var(--u)) 0 0 rgba(255, 255, 255, .9),
+    0 calc(3 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .45);
+}
+
+.key.white.down {
+  background: linear-gradient(180deg, #c4c6c2 0%, #dcdeda 14%, #e4e5e1 70%, #cbccc7 100%);
+  box-shadow:
+    inset 0 calc(3 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .45),
+    0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .5);
+  transform: translateY(calc(1.5 * var(--u)));
+}
+
+.key.black {
+  --kw: calc(100% / var(--white-count));
+  position: absolute;
+  top: 0;
+  width: calc(var(--kw) * 0.58);
+  height: 62%;
+  left: calc(var(--slot) * var(--kw) - var(--kw) * 0.29);
+  border-radius: 0 0 calc(2.5 * var(--u)) calc(2.5 * var(--u));
+  background:
+    linear-gradient(180deg, #4a4a4e 0%, #232326 7%, #141416 40%, #0a0a0c 88%, #1c1c1f 100%);
+  box-shadow:
+    inset calc(1.5 * var(--u)) 0 0 rgba(255, 255, 255, .12),
+    inset calc(-1.5 * var(--u)) 0 0 rgba(0, 0, 0, .8),
+    inset 0 calc(-4 * var(--u)) calc(4 * var(--u)) rgba(255, 255, 255, .07),
+    calc(1.5 * var(--u)) calc(4 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, .6);
+  pointer-events: auto;
+}
+
+.key.black.down {
+  background: linear-gradient(180deg, #2a2a2d 0%, #131315 30%, #030304 90%);
+  box-shadow:
+    inset 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .9),
+    calc(1 * var(--u)) calc(1.5 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, .6);
+  transform: translateY(calc(1.5 * var(--u)));
+}
+
+
+/* ===========================================================================
+   13  Boot overlay, tooltip, accessibility
+   =========================================================================== */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(90% 70% at 50% 30%, rgba(30, 34, 44, .55), transparent 70%),
+    linear-gradient(180deg, #0b0c0f 0%, #050608 100%);
+}
+
+.boot-card {
+  width: min(440px, 100%);
+  padding: 34px 30px 30px;
+  text-align: center;
+  border: 1px solid #2b3038;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), transparent 40%),
+    linear-gradient(180deg, #16181d, #0e1013);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .08);
+  color: #dfe3ea;
+}
+
+.boot-card h1 {
+  margin: 0 0 14px;
+  font-family: var(--face-brand);
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #f6f7f9;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .8);
+}
+
+.boot-card p {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #aab2be;
+}
+
+#boot-btn {
+  display: inline-block;
+  margin: 4px 0 18px;
+  padding: 11px 30px;
+  border: 1px solid #3a4150;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #f2f4f7;
+  background: linear-gradient(180deg, #333a46 0%, #232935 52%, #171c25 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 4px 12px rgba(0, 0, 0, .55);
+}
+
+#boot-btn:hover { background: linear-gradient(180deg, #3d4552 0%, #2a313e 52%, #1c222c 100%); }
+#boot-btn:active { transform: translateY(1px); }
+
+.boot-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #79828f;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, -100%);
+  padding: 4px 9px;
+  border: 1px solid #39424f;
+  border-radius: 5px;
+  background: rgba(12, 15, 20, .94);
+  color: #dde5f0;
+  font-family: var(--face);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .55);
+}
+
+/* --- keyboard accessibility ---------------------------------------------- */
+.knob:focus { outline: none; }
+button.rocker:focus { outline: none; }
+
+.knob:focus-visible,
+button.rocker:focus-visible,
+.bender-lever:focus-visible,
+#boot-btn:focus-visible {
+  outline: calc(2 * var(--u)) solid #66c8ff;
+  outline-offset: calc(2 * var(--u));
+  border-radius: calc(3 * var(--u));
+}
+
+#boot-btn:focus-visible { outline-width: 2px; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+</style>
+</head>
+<body>
+
+<div id="boot" class="boot">
+  <div class="boot-card">
+    <h1>OB-X</h1>
+    <p>Eight&#8209;voice polyphonic synthesizer</p>
+    <button id="boot-btn" type="button">Power On</button>
+    <p class="boot-hint">Play with the computer keyboard (A&#8211;L / W&#8211;P), the on&#8209;screen keys, or any connected MIDI keyboard.</p>
+  </div>
+</div>
+
+<main id="obx" class="obx" hidden>
+  <div class="cheek cheek-left"></div>
+
+  <div class="chassis">
+    <div class="control-surface" id="control-surface"></div>
+
+    <div class="brand-strip">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 24" class="brand-glyph"><path d="M4 12a8 8 0 1 1 16 0 8 8 0 1 1 16 0" /></svg>
+      </span>
+      <span class="brand-name">Oberheim</span>
+    </div>
+
+    <div class="lower-deck">
+      <div class="perf-panel" id="perf-panel"></div>
+      <div class="keybed" id="keybed"></div>
+    </div>
+  </div>
+
+  <div class="cheek cheek-right"></div>
+</main>
+
+<div id="tooltip" class="tooltip" hidden></div>
+
+<!-- The AudioWorklet processor. Not executed here: the type is unknown to the
+     browser, so this is inert text that start-up reads and turns into a Blob
+     URL, which is the only thing addModule() will accept. -->
+<script id="obx-worklet-source" type="text/x-obx-worklet">
+/*
+ * OB-X replica — AudioWorklet DSP engine.
+ *
+ * Eight voices, each with two oscillators, a noise source, a resonant
+ * low-pass filter and two ADSR envelopes, following the architecture set out
+ * in the OB-X Owner's Manual:
+ *
+ *   OSC 1 (saw / pulse / triangle, 4-octave range)  ─┐
+ *   OSC 2 (saw / pulse / triangle, 5-octave range)  ─┼─> FILTER ─> VCA ─> pan
+ *   NOISE (half / full)                             ─┘     ^        ^
+ *                                        FILTER ENVELOPE ──┘        │
+ *                                                 LOUDNESS ENVELOPE ┘
+ *
+ * The LFO is per layer (the original has one LFO for the whole instrument),
+ * with two destination groups: DEPTH 1 to oscillator/filter frequency and
+ * DEPTH 2 to pulse width and volume.
+ *
+ * This file runs on the audio thread and therefore does not import anything;
+ * the main thread pushes a complete parameter set over the message port.
+ */
+
+const SR = sampleRate;
+const TWO_PI = Math.PI * 2;
+const VOICE_COUNT = 8;
+const ALL_VOICES = Array.from({ length: VOICE_COUNT }, (_, i) => i);
+
+// ---------------------------------------------------------------------------
+// Parameter scaling — the programmer stores 0..1; these turn that into
+// musical units. Kept together so the mapping is auditable in one place.
+// ---------------------------------------------------------------------------
+
+const scale = {
+  // "Its range is from approximately 1/10 oscillation per second to 20
+  //  oscillations per second."
+  lfoRate: (v) => 0.1 * Math.pow(200, v),
+  // Envelope times: 1 ms to 10 s, cubic taper.
+  time: (v) => 0.001 + 9.999 * v * v * v,
+  // Filter cut-off, 16 Hz to ~18 kHz.
+  cutoff: (v) => 16 * Math.pow(2, v * 10.1),
+  // "in one octave increments over a four octave range"
+  osc1Semis: (v) => Math.round(v * 4) * 12,
+  // "in half-step increments over a five octave range"
+  osc2Semis: (v) => Math.round(v * 60),
+  // "fully counter-clockwise a square wave (50 % duty cycle) ... fully
+  //  clockwise a 5 % duty cycle"
+  pulseWidth: (v) => 0.5 - v * 0.45,
+  // Polyphonic portamento, up to two seconds.
+  glide: (v) => (v <= 0.001 ? 0 : 2.0 * v * v),
+};
+
+function semisToRatio(s) { return Math.pow(2, s / 12); }
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+/*
+ * Pade approximation of tanh, within about 1e-3 over the range the drive
+ * stage uses. It runs twice per sample per voice inside the oversampled
+ * oscillator loop, where the library call measured about a third of the
+ * engine's total cost.
+ */
+function fastTanh(x) {
+  if (x < -3) return -1;
+  if (x > 3) return 1;
+  const x2 = x * x;
+  return x * (27 + x2) / (27 + 9 * x2);
+}
+
+/*
+ * Output saturation. Eight voices in unison with both oscillators, noise and
+ * full resonance can sum past full scale, and hard digital clipping there
+ * sounds nothing like an overdriven analogue output stage. This is unity
+ * below the knee and bends smoothly to the rail above it, so the instrument
+ * can be driven hard without ever producing a squared-off edge.
+ */
+const KNEE = 0.7;
+function softClip(x) {
+  const a = Math.abs(x);
+  if (a <= KNEE) return x;
+  return Math.sign(x) * (KNEE + (1 - KNEE) * Math.tanh((a - KNEE) / (1 - KNEE)));
+}
+
+// ---------------------------------------------------------------------------
+// Band-limited oscillator primitives
+// ---------------------------------------------------------------------------
+
+/** PolyBLEP residual for a step discontinuity at phase t with increment dt. */
+function polyBlep(t, dt) {
+  if (t < dt) { const x = t / dt; return x + x - x * x - 1; }
+  if (t > 1 - dt) { const x = (t - 1) / dt; return x * x + x + x + 1; }
+  return 0;
+}
+
+/*
+ * Decimation from the 2x oversampled oscillator rate down to the host rate.
+ *
+ * Going to 4x was measured and reverted: it moved the alias figure by less
+ * than a decibel while costing 43 % more CPU, because what remains is the
+ * final stage's transition band folding 22-28 kHz down into the top octave,
+ * which no amount of upstream oversampling changes.
+ *
+ * A 31-tap half-band Kaiser design: unity through the audio band, 47 dB down
+ * by 0.35 of the internal rate and 88 dB by 0.40, so the oscillators' residual
+ * content folds back well below audibility instead of landing in the
+ * midrange. Half the taps are exactly zero, which is where the saving is —
+ * only 17 multiply-accumulates per output sample.
+ */
+const DECIM_TAPS = new Float64Array([
+  -0.000019404335, 0, 0.000387963060, 0, -0.001982976718, 0, 0.006562589271, 0,
+  -0.017124136064, 0, 0.039222973633, 0, -0.089397568908, 0, 0.312354139263, 0.499992841596,
+  0.312354139263, 0, -0.089397568908, 0, 0.039222973633, 0, -0.017124136064, 0,
+  0.006562589271, 0, -0.001982976718, 0, 0.000387963060, 0, -0.000019404335,
+]);
+/** Indices of the non-zero taps, so the zeros cost nothing at run time. */
+const DECIM_NZ = Uint8Array.from(DECIM_TAPS.reduce(
+  (acc, c, i) => (c !== 0 ? (acc.push(i), acc) : acc), []));
+const DECIM_LEN = 32; // power of two, so the ring index masks
+
+class Decimator {
+  constructor() { this.buf = new Float64Array(DECIM_LEN); this.pos = 0; }
+
+  push(x) {
+    this.buf[this.pos] = x;
+    this.pos = (this.pos + 1) & (DECIM_LEN - 1);
+  }
+
+  /** Filtered value for the samples pushed so far. Call once per host sample. */
+  read() {
+    let acc = 0;
+    const base = this.pos;
+    for (let n = 0; n < DECIM_NZ.length; n++) {
+      const i = DECIM_NZ[n];
+      acc += DECIM_TAPS[i] * this.buf[(base + i) & (DECIM_LEN - 1)];
+    }
+    return acc;
+  }
+
+  reset() { this.buf.fill(0); this.pos = 0; }
+}
+
+/*
+ * A narrow pulse carries a large DC component — at a 5 % duty cycle the offset
+ * is most of the waveform's amplitude. Left in, the loudness envelope
+ * multiplies it and every note starts and ends with a thump, sweeping the
+ * pulse width wobbles the whole mix, and the offset eats headroom. Real
+ * instruments are AC-coupled at the output; this is the equivalent, a one-pole
+ * high-pass sitting below the lowest note.
+ */
+class DCBlocker {
+  constructor() { this.x1 = 0; this.y1 = 0; }
+
+  process(x) {
+    const y = x - this.x1 + 0.9989 * this.y1;   // about 8 Hz at 44.1 kHz
+    this.x1 = x;
+    this.y1 = y;
+    return y;
+  }
+
+  reset() { this.x1 = this.y1 = 0; }
+}
+
+// ---------------------------------------------------------------------------
+// ADSR envelope — analogue-style exponential segments.
+// ---------------------------------------------------------------------------
+
+const IDLE = 0, ATTACK = 1, DECAY = 2, SUSTAIN = 3, RELEASE = 4;
+
+class ADSR {
+  constructor() { this.stage = IDLE; this.level = 0; }
+
+  gateOn() { this.stage = ATTACK; }
+  gateOff() { if (this.stage !== IDLE) this.stage = RELEASE; }
+  kill() { this.stage = IDLE; this.level = 0; }
+  get active() { return this.stage !== IDLE || this.level > 1e-5; }
+
+  /** ca/cd/cr are per-sample one-pole coefficients, s is the sustain level. */
+  process(ca, cd, cr, s) {
+    switch (this.stage) {
+      case ATTACK:
+        // Aim past the top so the attack segment stays brisk and curved.
+        this.level += (1.25 - this.level) * ca;
+        if (this.level >= 1) { this.level = 1; this.stage = DECAY; }
+        break;
+      case DECAY:
+        this.level += (s - this.level) * cd;
+        if (Math.abs(this.level - s) < 1e-4) { this.level = s; this.stage = SUSTAIN; }
+        break;
+      case SUSTAIN:
+        this.level += (s - this.level) * cd;
+        break;
+      case RELEASE:
+        this.level -= this.level * cr;
+        if (this.level < 1e-5) { this.level = 0; this.stage = IDLE; }
+        break;
+      default:
+        this.level = 0;
+    }
+    return this.level;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Filter.
+//
+// The manual describes "a two-pole, low-pass type", which is the default here:
+// one topology-preserving state-variable section, taken from the trapezoidal
+// integration form, whose damping term gives a proper resonant peak. The
+// panel's TYPE switch adds a 24 dB/octave option, built by cascading a second
+// section behind the resonant one.
+//
+// The damping term never reaches zero, so the filter cannot ring on its own —
+// the manual is explicit that "even in its maximum position, the Filter cannot
+// be put into oscillation".
+// ---------------------------------------------------------------------------
+
+/** One TPT state-variable low-pass section. `k` is the damping, 1/Q. */
+class SVF {
+  constructor() { this.ic1 = 0; this.ic2 = 0; }
+
+  process(x, g, k) {
+    const a1 = 1 / (1 + g * (g + k));
+    const a2 = g * a1;
+    const v3 = x - this.ic2;
+    const v1 = a1 * this.ic1 + a2 * v3;
+    const v2 = this.ic2 + g * v1;
+    this.ic1 = 2 * v1 - this.ic1;
+    this.ic2 = 2 * v2 - this.ic2;
+    return v2;
+  }
+
+  reset() { this.ic1 = this.ic2 = 0; }
+}
+
+class OBXFilter {
+  constructor() { this.a = new SVF(); this.b = new SVF(); }
+
+  /** k1 damps the resonant section; the second section only runs in 4-pole. */
+  process(x, g, k1, fourPole) {
+    let y = this.a.process(x, g, k1);
+    if (fourPole) y = this.b.process(y, g, 1.35);
+    return y;
+  }
+
+  reset() { this.a.reset(); this.b.reset(); }
+}
+
+// ---------------------------------------------------------------------------
+// Voice
+// ---------------------------------------------------------------------------
+
+class Voice {
+  constructor(index) {
+    this.index = index;
+    this.layer = 0;
+    this.note = -1;
+    this.gate = false;
+    this.velocity = 1;
+    this.pressure = 0;
+    this.age = 0;
+
+    this.phase1 = Math.random();
+    this.phase2 = Math.random();
+    this.tri1 = 0;
+    this.tri2 = 0;
+    this.pitch = 60;      // current (glided) pitch in MIDI note units
+    this.target = 60;
+    this.filterEnv = new ADSR();
+    this.ampEnv = new ADSR();
+    this.filter = new OBXFilter();
+    this.decim = new Decimator();
+    this.dcBlock = new DCBlocker();
+    this.noiseState = (index * 2654435761) >>> 0;
+
+    // Per-voice analogue scatter, re-rolled on every note-on. The VINTAGE
+    // control scales all of it.
+    this.driftA = 0; this.driftB = 0; this.cutoffTrim = 0; this.timeTrim = 1;
+    this.driftPhaseA = Math.random() * TWO_PI;
+    this.driftPhaseB = Math.random() * TWO_PI;
+    this.reroll();
+  }
+
+  reroll() {
+    this.driftA = (Math.random() * 2 - 1);
+    this.driftB = (Math.random() * 2 - 1);
+    this.cutoffTrim = (Math.random() * 2 - 1);
+    this.timeTrim = 1 + (Math.random() * 2 - 1) * 0.12;
+  }
+
+  get active() { return this.ampEnv.active; }
+
+  noteOn(note, vel, glideFrom) {
+    this.note = note;
+    this.target = note;
+    if (glideFrom !== null && glideFrom !== undefined) this.pitch = glideFrom;
+    else if (!this.active) this.pitch = note;
+    this.velocity = vel;
+    this.gate = true;
+    this.reroll();
+    if (!this.active) { this.filter.reset(); }
+    this.filterEnv.gateOn();
+    this.ampEnv.gateOn();
+  }
+
+  noteOff() {
+    this.gate = false;
+    this.filterEnv.gateOff();
+    this.ampEnv.gateOff();
+  }
+
+  kill() {
+    this.gate = false;
+    this.note = -1;
+    this.filterEnv.kill();
+    this.ampEnv.kill();
+    this.filter.reset();
+    this.decim.reset();
+    this.dcBlock.reset();
+  }
+
+  noise() {
+    // xorshift32 — flat, cheap, and deterministic per voice.
+    let x = this.noiseState;
+    x ^= x << 13; x >>>= 0;
+    x ^= x >> 17;
+    x ^= x << 5; x >>>= 0;
+    this.noiseState = x;
+    return (x / 2147483648) - 1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Layer — one program's worth of parameters plus its LFO.
+// ---------------------------------------------------------------------------
+
+class Layer {
+  constructor() {
+    this.p = Object.create(null);
+    this.lfoPhase = Math.random();
+    this.shValue = 0;
+    this.shArmed = false;
+    this.lfoBuf = new Float32Array(128);
+    // Smoothed values so knob moves do not zipper.
+    this.smCutoff = 0;
+    this.smVolume = 1;
+  }
+
+  get(id, dflt = 0) {
+    const v = this.p[id];
+    return typeof v === 'number' ? v : dflt;
+  }
+
+  renderLFO(n, rateExtra) {
+    if (this.lfoBuf.length < n) this.lfoBuf = new Float32Array(n);
+    const buf = this.lfoBuf;
+    const rate = scale.lfoRate(this.get('lfoRate', 0.35)) * rateExtra;
+    const inc = rate / SR;
+    const useSine = this.get('lfoSine') >= 0.5;
+    const useSquare = this.get('lfoSquare') >= 0.5;
+    const useSH = this.get('lfoSH') >= 0.5;
+    const count = (useSine ? 1 : 0) + (useSquare ? 1 : 0) + (useSH ? 1 : 0);
+    const norm = count > 1 ? 1 / count : 1;
+
+    for (let i = 0; i < n; i++) {
+      this.lfoPhase += inc;
+      if (this.lfoPhase >= 1) {
+        this.lfoPhase -= 1;
+        // "selects a random output from the LFO" — one new value per cycle.
+        this.shValue = Math.random() * 2 - 1;
+      }
+      let v = 0;
+      if (useSine) v += Math.sin(TWO_PI * this.lfoPhase);
+      if (useSquare) v += this.lfoPhase < 0.5 ? 1 : -1;
+      if (useSH) v += this.shValue;
+      buf[i] = count === 0 ? 0 : clamp(v * norm, -1, 1);
+    }
+    return buf;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Processor
+// ---------------------------------------------------------------------------
+
+class OBXProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.layers = [new Layer(), new Layer()];
+    this.voices = Array.from({ length: VOICE_COUNT }, (_, i) => new Voice(i));
+    this.pools = [[0, 1, 2, 3, 4, 5, 6, 7], []];
+    this.globals = {
+      masterVol: 0.75,
+      volBalance: 0.5,
+      masterTune: 0.5,
+      bend: 0,
+      bendRange: 0,
+      bendOsc2Only: 0,
+      modDepth: 0,
+      transpose: 0,
+      unisonSpread: 1,
+      pressure: 0,
+    };
+    this.tuneDrift = 0;    // slowly accumulating oscillator drift
+    this.driftClock = 0;
+    this.masterGain = 0;
+    this.port.onmessage = (e) => this.onMessage(e.data);
+  }
+
+  onMessage(m) {
+    switch (m.type) {
+      case 'patch': {
+        const layer = this.layers[m.layer | 0];
+        for (const [k, v] of Object.entries(m.params)) layer.p[k] = v;
+        break;
+      }
+      case 'param':
+        this.layers[m.layer | 0].p[m.id] = m.value;
+        break;
+      case 'global':
+        this.globals[m.id] = m.value;
+        break;
+      case 'pools':
+        this.pools = m.pools;
+        break;
+      case 'noteOn':
+        this.noteOn(m.note, m.velocity, m.layer | 0);
+        break;
+      case 'noteOff':
+        this.noteOff(m.note, m.layer | 0);
+        break;
+      case 'pressure':
+        this.globals.pressure = m.value;
+        break;
+      case 'allNotesOff':
+        for (const v of this.voices) v.noteOff();
+        break;
+      case 'panic':
+        for (const v of this.voices) v.kill();
+        break;
+      case 'autoTune':
+        // "the microprocessor automatically tunes all OB-X oscillators"
+        this.tuneDrift = 0;
+        for (const v of this.voices) { v.driftPhaseA = Math.random() * TWO_PI; v.reroll(); }
+        break;
+    }
+  }
+
+  // --- voice allocation ----------------------------------------------------
+
+  poolFor(layer) {
+    const pool = this.pools[layer];
+    if (pool && pool.length) return pool;
+    // Fall back to the first pool, then to every voice, so a malformed pools
+    // message can never leave note-on with nothing to allocate from.
+    const first = this.pools[0];
+    return first && first.length ? first : ALL_VOICES;
+  }
+
+  noteOn(note, velocity, layer) {
+    const L = this.layers[layer];
+    const pool = this.poolFor(layer);
+
+    if (L.get('unison') >= 0.5) {
+      // "causes all voices to be sounded by one key depression" with low
+      // note priority.
+      const sounding = pool.map((i) => this.voices[i]).filter((v) => v.gate && v.note >= 0);
+      if (sounding.length && note > Math.min(...sounding.map((v) => v.note))) return;
+      const glide = scale.glide(L.get('portamento')) > 0 && sounding.length ? sounding[0].pitch : null;
+      for (const i of pool) {
+        const v = this.voices[i];
+        v.layer = layer;
+        v.noteOn(note, velocity, glide);
+      }
+      return;
+    }
+
+    // Re-use a voice already holding this note, then a free one, then steal
+    // the oldest.
+    let chosen = pool.find((i) => this.voices[i].note === note && this.voices[i].gate);
+    if (chosen === undefined) chosen = pool.find((i) => !this.voices[i].active);
+    if (chosen === undefined) chosen = pool.find((i) => !this.voices[i].gate);
+    if (chosen === undefined) {
+      let oldest = pool[0];
+      for (const i of pool) if (this.voices[i].age > this.voices[oldest].age) oldest = i;
+      chosen = oldest;
+    }
+    const v = this.voices[chosen];
+    const glideOn = scale.glide(L.get('portamento')) > 0;
+    v.layer = layer;
+    v.age = 0;
+    v.noteOn(note, velocity, glideOn && v.note >= 0 ? v.pitch : null);
+  }
+
+  noteOff(note, layer) {
+    const L = this.layers[layer];
+    const pool = this.poolFor(layer);
+    if (L.get('unison') >= 0.5) {
+      const anyOther = pool.some((i) => this.voices[i].gate && this.voices[i].note !== note);
+      if (!anyOther) for (const i of pool) this.voices[i].noteOff();
+      return;
+    }
+    for (const i of pool) {
+      const v = this.voices[i];
+      if (v.note === note && v.gate) v.noteOff();
+    }
+  }
+
+  // --- audio ---------------------------------------------------------------
+
+  process(_inputs, outputs) {
+    const out = outputs[0];
+    const outL = out[0];
+    const outR = out.length > 1 ? out[1] : out[0];
+    const n = outL.length;
+    outL.fill(0);
+    if (outR !== outL) outR.fill(0);
+
+    // Slow global oscillator drift, the "vintage" wander shared by the
+    // whole instrument on top of each voice's own scatter.
+    this.driftClock += n / SR;
+    this.tuneDrift = Math.sin(this.driftClock * 0.11) * 0.5 + Math.sin(this.driftClock * 0.037) * 0.5;
+
+    const g = this.globals;
+    const lfoBufs = [this.layers[0].renderLFO(n, 1), this.layers[1].renderLFO(n, 1)];
+
+    // MASTER TUNE has a dead zone at the centre; outside it, ±50 cents.
+    const mt = g.masterTune - 0.5;
+    const masterCents = Math.abs(mt) < 0.04 ? 0 : (mt - Math.sign(mt) * 0.04) * 108.7;
+
+    const bendSemis = (g.bendRange >= 0.5 ? 12 : 2) * g.bend;
+    const spread = g.volBalance;
+
+    for (const voice of this.voices) {
+      if (!voice.active) { voice.age += n; continue; }
+      voice.age += n;
+      this.renderVoice(voice, this.layers[voice.layer], lfoBufs[voice.layer], n,
+                       outL, outR, masterCents, bendSemis, spread);
+    }
+
+    // Master volume, smoothed. Not programmable — the manual is explicit that
+    // VOLUME "cannot be input into the programmer".
+    const targetGain = g.masterVol * g.masterVol * 0.9;
+    for (let i = 0; i < n; i++) {
+      this.masterGain += (targetGain - this.masterGain) * 0.002;
+      outL[i] = softClip(outL[i] * this.masterGain);
+      if (outR !== outL) outR[i] = softClip(outR[i] * this.masterGain);
+    }
+    return true;
+  }
+
+  renderVoice(v, L, lfo, n, outL, outR, masterCents, bendSemis, spread) {
+    const gl = this.globals;
+
+    // ---- per-block coefficients -------------------------------------------
+    const vintage = L.get('vintage');
+    const detuneCents = (L.get('osc2detune', 0.5) - 0.5) * 100;
+
+    const osc1Base = scale.osc1Semis(L.get('osc1Freq'));
+    const osc2Base = scale.osc2Semis(L.get('osc2Freq'));
+
+    const saw1 = L.get('osc1Saw') >= 0.5, pul1 = L.get('osc1Pulse') >= 0.5;
+    const saw2 = L.get('osc2Saw') >= 0.5, pul2 = L.get('osc2Pulse') >= 0.5;
+    const tri1 = saw1 && pul1, tri2 = saw2 && pul2;
+    const osc1On = saw1 || pul1, osc2On = saw2 || pul2;
+
+    const pwBase = scale.pulseWidth(L.get('pulseWidth'));
+    // Off / half / full, matching the depth the old continuous control gave
+    // at its useful settings.
+    const xmod = [0, 0.5, 2.0][Math.round(L.get('xmod'))] ?? 0;
+    const syncOn = L.get('sync') >= 0.5;
+
+    const depth1 = L.get('depth1');
+    const d1o1 = L.get('d1Osc1') >= 0.5, d1o2 = L.get('d1Osc2') >= 0.5, d1f = L.get('d1Filter') >= 0.5;
+    const depth2 = L.get('depth2');
+    const d2p1 = L.get('d2Pwm1') >= 0.5, d2p2 = L.get('d2Pwm2') >= 0.5, d2v = L.get('d2Volume') >= 0.5;
+
+    const fOsc1 = L.get('fOsc1') >= 0.5 ? 1 : 0;
+    const fOsc2Sel = Math.round(L.get('fOsc2', 2));
+    const fOsc2 = fOsc2Sel === 0 ? 0 : fOsc2Sel === 1 ? 0.56 : 1;  // half ≈ −5 dB
+    const fNoiseSel = Math.round(L.get('fNoise', 0));
+    const fNoise = fNoiseSel === 0 ? 0 : fNoiseSel === 1 ? 0.56 : 1;
+
+    const fourPole = Math.round(L.get('filterType')) === 1;
+    const res = L.get('resonance');
+    // Damping runs from 2.0 (Q = 0.5, no emphasis) down to 0.1 (Q = 10), which
+    // is a strong peak that still cannot break into oscillation.
+    const k = 2 - 1.9 * res;
+    const kbd = L.get('kbdTrack') >= 0.5 ? 1 : 0;
+    const cutoffBase = L.get('cutoff');
+    const filterMod = L.get('filterMod');
+
+    const veloSel = Math.round(L.get('velo'));
+    const veloFil = (veloSel & 1) === 1, veloAmp = (veloSel & 2) === 2;
+    const touchSel = Math.round(L.get('touch'));
+    const touchFil = (touchSel & 1) === 1, touchAmp = (touchSel & 2) === 2;
+
+    const tt = v.timeTrim * (1 + vintage * 0.0);
+    const coef = (t) => 1 - Math.exp(-1 / Math.max(1, scale.time(t) * tt * SR));
+    const fca = coef(L.get('fAttack')), fcd = coef(L.get('fDecay')), fcr = coef(L.get('fRelease'));
+    const fs = L.get('fSustain');
+    const aca = coef(L.get('aAttack')), acd = coef(L.get('aDecay')), acr = coef(L.get('aRelease'));
+    const as = L.get('aSustain');
+
+    const glideTime = scale.glide(L.get('portamento'));
+    const glideCoef = glideTime > 0 ? 1 - Math.exp(-1 / (glideTime * SR)) : 1;
+
+    // Per-voice analogue scatter.
+    const voiceDetune = vintage * (v.driftA * 9 + this.tuneDrift * v.driftB * 4);
+    const voiceCut = vintage * v.cutoffTrim * 0.06;
+
+    // Pan pots: the original spreads its voices across the stereo field.
+    const panPos = ((v.index / (VOICE_COUNT - 1)) * 2 - 1) * spread;
+    const gainL = Math.cos((panPos + 1) * Math.PI / 4);
+    const gainR = Math.sin((panPos + 1) * Math.PI / 4);
+
+    const velAmp = veloAmp ? 0.25 + 0.75 * v.velocity : 1;
+    const velFilAmt = veloFil ? v.velocity : 1;
+
+    for (let i = 0; i < n; i++) {
+      const mod = lfo[i];
+
+      // ---- pitch --------------------------------------------------------
+      v.pitch += (v.target - v.pitch) * glideCoef;
+
+      const pressure = gl.pressure;
+      // "This controls the amount of vibrato to be added to both Oscillators."
+      const vib = gl.modDepth * 0.5 * mod;
+      const freqMod = depth1 * depth1 * 12 * mod;
+
+      let semis1 = v.pitch + gl.transpose * 12 + osc1Base + masterCents / 100 + voiceDetune / 100 + vib;
+      let semis2 = v.pitch + gl.transpose * 12 + osc2Base + masterCents / 100
+                 + (voiceDetune + detuneCents) / 100 + vib;
+      if (d1o1) semis1 += freqMod;
+      if (d1o2) semis2 += freqMod;
+      if (gl.bendOsc2Only >= 0.5) semis2 += bendSemis;
+      else { semis1 += bendSemis; semis2 += bendSemis; }
+
+      const f1 = 440 * semisToRatio(semis1 - 69);
+      const f2 = 440 * semisToRatio(semis2 - 69);
+
+      // ---- pulse width ---------------------------------------------------
+      const pwMod = depth2 * 0.42 * mod;
+      const pw1 = clamp(pwBase + (d2p1 ? pwMod : 0), 0.03, 0.97);
+      const pw2 = clamp(pwBase + (d2p2 ? pwMod : 0), 0.03, 0.97);
+
+      // ---- oscillators, 2x oversampled -----------------------------------
+      for (let s = 0; s < 2; s++) {
+        // Both increments are capped short of Nyquist. Without the cap a high
+        // key with osc 2 tuned up five octaves and TRANSPOSE UP (or a broad
+        // bend) pushes the increment past a whole cycle per sample, and the
+        // single-subtract wrap below can never bring the phase back into
+        // range — the oscillator folds down to a loud audible tone where it
+        // should be inaudibly high.
+        const dt2 = clamp(f2 / (SR * 2), 0, 0.45);
+        // Oscillator 2 first: it can modulate oscillator 1 (X-MOD) and is the
+        // slave when SYNC is on.
+        v.phase2 += dt2;
+        if (v.phase2 >= 1) v.phase2 -= 1;
+
+        let o2 = 0;
+        if (osc2On) {
+          if (tri2) {
+            const sq = (v.phase2 < pw2 ? 1 : -1)
+                     + polyBlep(v.phase2, dt2)
+                     - polyBlep((v.phase2 + 1 - pw2) % 1, dt2);
+            v.tri2 = (v.tri2 + 4 * dt2 * sq) * 0.9995;
+            o2 = v.tri2;
+          } else if (saw2) {
+            o2 = 2 * v.phase2 - 1 - polyBlep(v.phase2, dt2);
+          } else {
+            o2 = (v.phase2 < pw2 ? 1 : -1)
+               + polyBlep(v.phase2, dt2)
+               - polyBlep((v.phase2 + 1 - pw2) % 1, dt2);
+          }
+        }
+
+        // "X-MOD ... causes Oscillator 2 to modulate Oscillator 1"
+        const f1m = xmod > 0 ? f1 * (1 + xmod * o2) : f1;
+        const dt1 = clamp(Math.abs(f1m) / (SR * 2), 0, 0.45);
+
+        v.phase1 += dt1;
+        if (v.phase1 >= 1) {
+          v.phase1 -= 1;
+          // "SYNC ... causes Oscillator 2 to lock onto a harmonic of
+          //  Oscillator 1" — the master's wrap resets the slave.
+          // The slave restarts proportionally to how far the master overshot
+          // its wrap, which places the reset at the right sub-sample instant.
+          // The modulo keeps a very slow master from throwing the ratio out of
+          // range.
+          if (syncOn) {
+            v.phase2 = (v.phase1 * (dt2 / Math.max(dt1, 1e-9))) % 1;
+            v.tri2 = 0;
+          }
+        }
+
+        let o1 = 0;
+        if (osc1On) {
+          if (tri1) {
+            const sq = (v.phase1 < pw1 ? 1 : -1)
+                     + polyBlep(v.phase1, dt1)
+                     - polyBlep((v.phase1 + 1 - pw1) % 1, dt1);
+            v.tri1 = (v.tri1 + 4 * dt1 * sq) * 0.9995;
+            o1 = v.tri1;
+          } else if (saw1) {
+            o1 = 2 * v.phase1 - 1 - polyBlep(v.phase1, dt1);
+          } else {
+            o1 = (v.phase1 < pw1 ? 1 : -1)
+               + polyBlep(v.phase1, dt1)
+               - polyBlep((v.phase1 + 1 - pw1) % 1, dt1);
+          }
+        }
+        // The input saturation lives here, inside the oversampled section,
+        // so the harmonics it generates are caught by the decimator instead
+        // of folding back into the audible band. Measured, moving it out of
+        // the filter and up here is worth about 5 dB of alias rejection.
+        const raw = (o1 * fOsc1 + o2 * fOsc2) * 0.5;
+        v.decim.push(fastTanh(raw * 0.9) * 1.11);
+      }
+      let mix = v.decim.read();
+      if (fNoise > 0) mix += v.noise() * fNoise * 0.35;
+
+      // ---- envelopes ------------------------------------------------------
+      const fEnv = v.filterEnv.process(fca, fcd, fcr, fs);
+      const aEnv = v.ampEnv.process(aca, acd, acr, as);
+
+      // ---- filter ---------------------------------------------------------
+      let cut = cutoffBase + voiceCut;
+      cut += filterMod * fEnv * velFilAmt;
+      if (d1f) cut += depth1 * mod * 0.5;
+      if (kbd) cut += (v.pitch - 60) / 120;
+      if (touchFil) cut += pressure * 0.4;
+      cut = clamp(cut, 0, 1.25);
+
+      const fc = clamp(scale.cutoff(cut), 12, SR * 0.45);
+      const gTan = Math.tan(Math.PI * fc / SR);
+
+      let sig = v.filter.process(mix, gTan, k, fourPole);
+      sig *= 1 + res * 0.35;                          // a little make-up for the narrow peak
+      // AC-couple before the amplifier, so a narrow pulse's offset cannot
+      // turn the envelope into a thump.
+      sig = v.dcBlock.process(sig);
+
+      // ---- amplifier ------------------------------------------------------
+      let amp = aEnv * velAmp;
+      if (touchAmp) amp *= 1 + pressure * 0.6;
+      if (d2v) amp *= 1 - depth2 * 0.5 * (0.5 - mod * 0.5);
+
+      const y = sig * amp * 0.32;
+      outL[i] += y * gainL;
+      if (outR !== outL) outR[i] += y * gainR;
+    }
+  }
+}
+
+registerProcessor('obx-processor', OBXProcessor);
+
+</script>
+
+<script type="module">
+/*
+ * addModule() needs a URL. A Blob URL is the efficient choice and works
+ * wherever the page has a real origin, but a page opened straight from disk
+ * has an opaque origin, its Blob URLs come out as "blob:null/..." and the
+ * worklet loader refuses them. A data: URL has no origin to check and loads
+ * in both cases, so it is the fallback.
+ */
+function obxWorkletSource() {
+  return document.getElementById('obx-worklet-source').textContent;
+}
+function obxBlobURL() {
+  return URL.createObjectURL(new Blob([obxWorkletSource()], { type: 'text/javascript' }));
+}
+function obxDataURL() {
+  const utf8 = new TextEncoder().encode(obxWorkletSource());
+  let bin = '';
+  for (const byte of utf8) bin += String.fromCharCode(byte);
+  return 'data:text/javascript;base64,' + btoa(bin);
+}
+async function addWorklet(ctx) {
+  try {
+    await ctx.audioWorklet.addModule(obxBlobURL());
+  } catch {
+    await ctx.audioWorklet.addModule(obxDataURL());
+  }
+}
+
+// ===== src/params.js ===============================================
+/*
+ * OB-X replica — parameter model.
+ *
+ * Single source of truth shared by the UI, the programmer (patch memory) and
+ * the AudioWorklet DSP. Every programmable parameter is stored normalised to
+ * 0..1, exactly like the original's 8-bit programmer values; the DSP is
+ * responsible for scaling them into musical ranges.
+ *
+ * Section names and control names follow the OB-X Owner's Manual:
+ *   MANUAL section  -> not programmable (volume, tune, hold, chord, master tune)
+ *   CONTROL section -> programmable (portamento, unison, osc 2 detune)
+ *   MODULATION      -> programmable (LFO + two destination columns)
+ *   OSCILLATORS     -> programmable
+ *   FILTER          -> programmable
+ *   ENVELOPES       -> programmable (filter envelope + loudness envelope)
+ */
+
+// ---------------------------------------------------------------------------
+// Programmable parameters — these make up a "program" in the programmer.
+// type: 'knob' (continuous 0..1) | 'switch' (0/1) | 'multi' (0..states-1)
+// ---------------------------------------------------------------------------
+
+const PARAMS = [
+  // --- CONTROL -------------------------------------------------------------
+  { id: 'vintage',     name: 'Vintage',      type: 'knob',  def: 0.30 },
+  { id: 'portamento',  name: 'Portamento',   type: 'knob',  def: 0.00 },
+  // Both cycle off / filter / amp / both, shown on the pair of FIL and AMP LEDs.
+  { id: 'velo',        name: 'Velo',         type: 'multi', states: 4, def: 0 },
+  { id: 'touch',       name: 'Touch',        type: 'multi', states: 4, def: 0 },
+  { id: 'unison',      name: 'Unison',       type: 'switch', def: 0 },
+  { id: 'osc2detune',  name: 'Osc 2 Detune', type: 'knob',  def: 0.50, center: true },
+
+  // --- MODULATION ----------------------------------------------------------
+  { id: 'lfoRate',     name: 'LFO Rate',     type: 'knob',  def: 0.35 },
+  { id: 'lfoSine',     name: 'Sine',         type: 'switch', def: 1 },
+  { id: 'lfoSquare',   name: 'Square',       type: 'switch', def: 0 },
+  { id: 'lfoSH',       name: 'S/H',          type: 'switch', def: 0 },
+
+  { id: 'depth1',      name: 'Depth 1',      type: 'knob',  def: 0.00 },
+  { id: 'd1Osc1',      name: 'Osc 1',        type: 'switch', def: 0 },
+  { id: 'd1Osc2',      name: 'Osc 2',        type: 'switch', def: 0 },
+  { id: 'd1Filter',    name: 'Filter',       type: 'switch', def: 0 },
+
+  { id: 'depth2',      name: 'Depth 2',      type: 'knob',  def: 0.00 },
+  { id: 'd2Pwm1',      name: 'PWM 1',        type: 'switch', def: 0 },
+  { id: 'd2Pwm2',      name: 'PWM 2',        type: 'switch', def: 0 },
+  { id: 'd2Volume',    name: 'Volume',       type: 'switch', def: 0 },
+
+  // --- OSCILLATORS ---------------------------------------------------------
+  // "1 FREQUENCY ... in one octave increments over a four octave range"
+  { id: 'osc1Freq',    name: 'Osc 1 Freq',   type: 'knob',  def: 0.00, steps: 5 },
+  { id: 'osc1Saw',     name: 'Saw',          type: 'switch', def: 1 },
+  { id: 'osc1Pulse',   name: 'Pulse',        type: 'switch', def: 0 },
+  // "fully counter-clockwise a square wave (50%) ... fully clockwise a 5% duty cycle"
+  { id: 'pulseWidth',  name: 'Pulse Width',  type: 'knob',  def: 0.00 },
+  // "When switched on, causes Oscillator 2 to modulate Oscillator 1." The
+  // panel carries a two-LED rocker here, like the filter's source switches,
+  // so it selects off / half / full rather than a continuous amount.
+  { id: 'xmod',        name: 'X-Mod',        type: 'multi', states: 3, def: 0 },
+  { id: 'sync',        name: 'Sync',         type: 'switch', def: 0 },
+  // "2 FREQUENCY ... in half-step increments over a five octave range" — the
+  // range runs upward from unison, so osc 2 cannot be tuned below osc 1 by
+  // this control; OSC 2 DETUNE covers the cents either side.
+  { id: 'osc2Freq',    name: 'Osc 2 Freq',   type: 'knob',  def: 0.00, steps: 61 },
+  { id: 'osc2Saw',     name: 'Saw',          type: 'switch', def: 1 },
+  { id: 'osc2Pulse',   name: 'Pulse',        type: 'switch', def: 0 },
+
+  // --- FILTER --------------------------------------------------------------
+  { id: 'cutoff',      name: 'Frequency',    type: 'knob',  def: 1.00 },
+  { id: 'resonance',   name: 'Resonance',    type: 'knob',  def: 0.00 },
+  { id: 'filterMod',   name: 'Modulation',   type: 'knob',  def: 0.00 },
+  { id: 'filterType',  name: 'Type',         type: 'multi', states: 2, def: 0 }, // 0 = 2-pole, 1 = 4-pole
+  { id: 'fOsc1',       name: 'Osc 1',        type: 'switch', def: 1 },
+  { id: 'fOsc2',       name: 'Osc 2',        type: 'multi', states: 3, def: 2 }, // off / half / full
+  { id: 'fNoise',      name: 'Noise',        type: 'multi', states: 3, def: 0 }, // off / half / full
+  { id: 'kbdTrack',    name: 'Kbd',          type: 'switch', def: 1 },
+
+  // --- ENVELOPES -----------------------------------------------------------
+  { id: 'fAttack',     name: 'Attack',       type: 'knob',  def: 0.00 },
+  { id: 'fDecay',      name: 'Decay',        type: 'knob',  def: 0.30 },
+  { id: 'fSustain',    name: 'Sustain',      type: 'knob',  def: 0.60 },
+  { id: 'fRelease',    name: 'Release',      type: 'knob',  def: 0.20 },
+
+  { id: 'aAttack',     name: 'Attack',       type: 'knob',  def: 0.00 },
+  { id: 'aDecay',      name: 'Decay',        type: 'knob',  def: 0.30 },
+  { id: 'aSustain',    name: 'Sustain',      type: 'knob',  def: 1.00 },
+  { id: 'aRelease',    name: 'Release',      type: 'knob',  def: 0.20 },
+];
+
+const PARAM_IDS = PARAMS.map((p) => p.id);
+const PARAM_BY_ID = Object.fromEntries(PARAMS.map((p) => [p.id, p]));
+
+/** A fresh program with every parameter at its default. */
+function defaultProgram(name = 'Init Program') {
+  const prog = { name };
+  for (const p of PARAMS) prog[p.id] = p.def;
+  return prog;
+}
+
+/** Clone + fill in anything missing, so partial preset definitions are legal. */
+function normaliseProgram(src, fallbackName = 'Program') {
+  const prog = defaultProgram(src?.name ?? fallbackName);
+  if (src) {
+    for (const p of PARAMS) {
+      if (typeof src[p.id] === 'number') prog[p.id] = clampParam(p, src[p.id]);
+    }
+  }
+  return prog;
+}
+
+function clampParam(p, v) {
+  if (!Number.isFinite(v)) return p.def;
+  if (p.type === 'switch') return v >= 0.5 ? 1 : 0;
+  if (p.type === 'multi') return Math.min(p.states - 1, Math.max(0, Math.round(v)));
+  return Math.min(1, Math.max(0, v));
+}
+
+/** Quantise a knob to its detents, if it has any (osc frequency switches). */
+function quantise(p, v) {
+  if (p.type !== 'knob' || !p.steps) return v;
+  const n = p.steps - 1;
+  return Math.round(v * n) / n;
+}
+
+// ---------------------------------------------------------------------------
+// Global (non-programmable) state — the manual's MANUAL section, plus the
+// left-hand performance panel and the keyboard-mode section.
+// ---------------------------------------------------------------------------
+
+/*
+ * Every one of these is addressed from the panel with a "g:" prefix — the
+ * programmer stores none of them. The application seeds its global state
+ * directly from this object, so it is the defaults table for the whole
+ * non-programmable side of the instrument.
+ *
+ * State that has no control of its own (the pitch-bend lever position, the
+ * split point, which layer is being edited, whether the programmer is in
+ * MANUAL mode) lives on the application rather than here.
+ */
+const GLOBALS = {
+  // MANUAL section — "The controls in the MANUAL section are NOT programmable."
+  masterVol:    0.75,
+  volBalance:   0.50,  // stereo spread of the voice pan-pots
+  masterTune:   0.50,  // dead zone at centre = A-440
+  tune:         0,     // momentary: auto-tunes all oscillators
+  hold:         0,     // sustains notes indefinitely
+  chord:        0,     // transposable "unison chord"
+
+  // Performance panel, left of the keybed
+  modDepth:     0.00,  // modulation lever amount (adds vibrato)
+  bendRange:    0,     // 0 = narrow (whole step), 1 = broad (octave)
+  bendOsc2Only: 0,
+  transposeDown: 0,
+  transposeUp:  0,
+  perfLower:    0,
+  perfUpper:    1,
+
+  // Keyboard section
+  split:        0,
+  double:       0,
+  lower:        0,
+  upper:        1,
+
+  // Programmer
+  manual:       0,
+  page2:        0,
+  bank:         0,
+  group:        0,
+  global:       0,
+  write:        0,
+  prog1: 1, prog2: 0, prog3: 0, prog4: 0,
+  prog5: 0, prog6: 0, prog7: 0, prog8: 0,
+
+  // Arpeggiator
+  arpRate:      0.45,
+  arpOn:        0,
+  arpMode:      1,     // 0 = lever drives modulation, 1 = drives the arpeggiator
+  arpHold:      0,
+  arpKbd:       0,
+  arpDown:      0,
+  arpUp:        1,
+};
+
+const KEY_RANGE = { first: 36, last: 96 }; // 61 keys, C2..C7
+
+
+// ===== src/presets.js ==============================================
+/*
+ * OB-X replica — factory program bank.
+ *
+ * The original OB-X programmer holds 32 programs, addressed on the front panel
+ * as four GROUPS (A, B, C, D) of eight PROGRAM buttons (1..8). This bank is a
+ * flat array in that same order, so the panel address maps onto the index as:
+ *
+ *     index = group * 8 + (program - 1)
+ *
+ *     0..7   -> A1..A8   brass and ensembles
+ *     8..15  -> B1..B8   strings, pads and choirs
+ *     16..23 -> C1..C8   basses, clavs, percussive and lead sounds
+ *     24..31 -> D1..D8   effects, sweeps, noise and experimental
+ *
+ * Every value is normalised 0..1 exactly as the programmer stores it; 'multi'
+ * parameters hold an integer 0..states-1 and 'switch' parameters hold 0 or 1.
+ * Programs are partial — anything omitted keeps the default from params.js,
+ * because the host runs each entry through normaliseProgram() on load.
+ *
+ * Values are chosen against the scaling in obx-processor.js, which matters
+ * because two of those curves are steep:
+ *   - envelope times are 1 ms + 10 s * v^3, so a musical attack of 25 ms is
+ *     around 0.13, not 0.05;
+ *   - the filter cut-off is 16 Hz * 2^(10.1 * v), and KBD tracking subtracts
+ *     up to 0.2 at the bottom of the keyboard, so bass programs need a higher
+ *     nominal cut-off than their brightness suggests.
+ *
+ * Names are kept to 16 characters or fewer so they fit the programmer LCD.
+ */
+
+// Osc 2 FREQUENCY is quantised to 61 half-step detents over five octaves, so a
+// musical interval is written as semi(n). Osc 1 FREQUENCY has five one-octave
+// detents over its four octave range, written as oct(n).
+const semi = (n) => n / 60;
+const oct = (n) => n / 4;
+
+const FACTORY_BANK = [
+  /* -----------------------------------------------------------------------
+   * GROUP A — BRASS AND ENSEMBLES
+   * The OB-X signature: two slightly detuned sawtooths, a moderate filter
+   * envelope opening a low-ish two-pole cut-off, and a short loudness attack.
+   * --------------------------------------------------------------------- */
+
+  // A1 — the reference OB-X brass sound.
+  {
+    name: 'Brass Ensemble',
+    vintage: 0.35,
+    osc2detune: 0.580, // ~+8 cents, a slow ensemble beat
+    osc1Saw: 1, osc1Pulse: 0,
+    osc2Saw: 1, osc2Pulse: 0,
+    cutoff: 0.34, resonance: 0.10, filterMod: 0.50,
+    fOsc1: 1, fOsc2: 2, kbdTrack: 1,
+    fAttack: 0.097, fDecay: 0.368, fSustain: 0.40, fRelease: 0.271,
+    aAttack: 0.134, aDecay: 0.368, aSustain: 0.85, aRelease: 0.262,
+    velo: 1, // velocity -> filter
+  },
+
+  // A2
+  {
+    name: 'Soft Horns',
+    vintage: 0.40,
+    osc2detune: 0.550,
+    osc1Saw: 1, osc2Saw: 1,
+    cutoff: 0.36, resonance: 0.06, filterMod: 0.38,
+    fAttack: 0.181, fDecay: 0.412, fSustain: 0.45, fRelease: 0.310,
+    aAttack: 0.207, aDecay: 0.391, aSustain: 0.90, aRelease: 0.310,
+  },
+
+  // A3 — pulse osc 2 for a reedier, more forward section.
+  {
+    name: 'Trumpet Section',
+    vintage: 0.30,
+    osc2detune: 0.590,
+    osc1Saw: 1, osc1Pulse: 0,
+    osc2Saw: 0, osc2Pulse: 1,
+    pulseWidth: 0.30,
+    cutoff: 0.28, resonance: 0.18, filterMod: 0.58,
+    fAttack: 0.067, fDecay: 0.327, fSustain: 0.30, fRelease: 0.246,
+    aAttack: 0.089, aDecay: 0.342, aSustain: 0.80, aRelease: 0.228,
+    velo: 3, // velocity -> filter + amp
+  },
+
+  // A4
+  {
+    name: 'Octave Brass',
+    vintage: 0.35,
+    osc2detune: 0.530,
+    osc1Saw: 1, osc2Saw: 1,
+    osc2Freq: semi(12), // one octave up
+    fOsc2: 1, // half level, so the octave sits under the fundamental
+    cutoff: 0.34, resonance: 0.08, filterMod: 0.48,
+    fAttack: 0.097, fDecay: 0.355, fSustain: 0.38, fRelease: 0.271,
+    aAttack: 0.134, aDecay: 0.368, aSustain: 0.85, aRelease: 0.262,
+  },
+
+  // A5
+  {
+    name: 'Brass Pad',
+    vintage: 0.45,
+    osc2detune: 0.600,
+    osc1Saw: 1, osc2Saw: 1,
+    lfoRate: 0.30, lfoSine: 1, // ~0.5 Hz
+    depth1: 0.10, d1Osc1: 1, d1Osc2: 1, // ~11 cents of vibrato on both
+    cutoff: 0.30, resonance: 0.10, filterMod: 0.40,
+    fAttack: 0.292, fDecay: 0.448, fSustain: 0.50, fRelease: 0.368,
+    aAttack: 0.327, aDecay: 0.431, aSustain: 0.90, aRelease: 0.391,
+  },
+
+  // A6 — percussive stab: filter sustain almost off, amp sustain half up.
+  {
+    name: 'Big Band Stab',
+    vintage: 0.30,
+    osc2detune: 0.560,
+    osc1Saw: 1, osc2Saw: 1,
+    cutoff: 0.22, resonance: 0.22, filterMod: 0.68,
+    fAttack: 0.046, fDecay: 0.240, fSustain: 0.08, fRelease: 0.215,
+    aAttack: 0.058, aDecay: 0.310, aSustain: 0.55, aRelease: 0.228,
+    velo: 3,
+  },
+
+  // A7
+  {
+    name: 'Mellow Brass',
+    vintage: 0.40,
+    osc2detune: 0.560,
+    osc1Saw: 1, osc2Saw: 1,
+    filterType: 1, // four-pole
+    cutoff: 0.26, resonance: 0.05, filterMod: 0.42,
+    fAttack: 0.143, fDecay: 0.431, fSustain: 0.40, fRelease: 0.327,
+    aAttack: 0.181, aDecay: 0.412, aSustain: 0.90, aRelease: 0.303,
+  },
+
+  // A8
+  {
+    name: 'Brass Swell',
+    vintage: 0.45,
+    osc2detune: 0.610,
+    osc1Saw: 1, osc2Saw: 1,
+    cutoff: 0.20, resonance: 0.12, filterMod: 0.55,
+    fAttack: 0.493, fDecay: 0.531, fSustain: 0.55, fRelease: 0.448,
+    aAttack: 0.448, aDecay: 0.531, aSustain: 1.00, aRelease: 0.464,
+    touch: 1, // aftertouch -> filter
+  },
+
+  /* -----------------------------------------------------------------------
+   * GROUP B — STRINGS, PADS AND CHOIRS
+   * Slow loudness attacks, wider osc 2 detune for chorusing, and pulse-width
+   * modulation from DEPTH 2 into PWM 1 / PWM 2 for the vocal and pad voices.
+   * --------------------------------------------------------------------- */
+
+  // B1
+  {
+    name: 'String Ensemble',
+    vintage: 0.50,
+    osc2detune: 0.640, // ~+14 cents, a wide string chorus
+    osc1Saw: 1, osc2Saw: 1,
+    lfoRate: 0.28, lfoSine: 1,
+    depth1: 0.10, d1Osc1: 1, d1Osc2: 1,
+    cutoff: 0.40, resonance: 0.10, filterMod: 0.26,
+    fAttack: 0.292, fDecay: 0.448, fSustain: 0.55, fRelease: 0.391,
+    aAttack: 0.310, aDecay: 0.448, aSustain: 0.95, aRelease: 0.431,
+  },
+
+  // B2 — both oscillators on pulse, swept slowly by DEPTH 2.
+  {
+    name: 'Warm PWM Pad',
+    vintage: 0.45,
+    osc2detune: 0.550,
+    osc1Saw: 0, osc1Pulse: 1,
+    osc2Saw: 0, osc2Pulse: 1,
+    pulseWidth: 0.12,
+    lfoRate: 0.10, lfoSine: 1, // ~0.17 Hz
+    depth2: 0.40, d2Pwm1: 1, d2Pwm2: 1,
+    cutoff: 0.36, resonance: 0.12, filterMod: 0.28,
+    fAttack: 0.342, fDecay: 0.493, fSustain: 0.55, fRelease: 0.431,
+    aAttack: 0.342, aDecay: 0.464, aSustain: 1.00, aRelease: 0.448,
+  },
+
+  // B3
+  {
+    name: 'Choir Aahs',
+    vintage: 0.40,
+    osc2detune: 0.600,
+    osc1Saw: 0, osc1Pulse: 1,
+    osc2Saw: 1, osc2Pulse: 0,
+    pulseWidth: 0.55,
+    cutoff: 0.42, resonance: 0.28, filterMod: 0.24,
+    fAttack: 0.327, fDecay: 0.464, fSustain: 0.60, fRelease: 0.412,
+    aAttack: 0.310, aDecay: 0.448, aSustain: 0.95, aRelease: 0.412,
+  },
+
+  // B4
+  {
+    name: 'Vox Humana',
+    vintage: 0.40,
+    osc2detune: 0.610,
+    osc1Saw: 0, osc1Pulse: 1,
+    osc2Saw: 0, osc2Pulse: 1,
+    pulseWidth: 0.08, // close to a square, then swept by DEPTH 2
+    lfoRate: 0.18, lfoSine: 1,
+    depth2: 0.30, d2Pwm1: 1, d2Pwm2: 1,
+    cutoff: 0.46, resonance: 0.18, filterMod: 0.14,
+    fAttack: 0.228, fDecay: 0.448, fSustain: 0.70, fRelease: 0.368,
+    aAttack: 0.215, aDecay: 0.431, aSustain: 1.00, aRelease: 0.355,
+  },
+
+  // B5
+  {
+    name: 'Analog Strings',
+    vintage: 0.70, // heavier drift for a looser ensemble
+    osc2detune: 0.670, // ~+17 cents
+    osc1Saw: 1, osc2Saw: 1,
+    lfoRate: 0.32, lfoSine: 1,
+    depth1: 0.12, d1Osc2: 1, // wobble on osc 2 only
+    cutoff: 0.42, resonance: 0.14, filterMod: 0.30,
+    fAttack: 0.271, fDecay: 0.448, fSustain: 0.55, fRelease: 0.412,
+    aAttack: 0.271, aDecay: 0.448, aSustain: 0.92, aRelease: 0.448,
+  },
+
+  // B6
+  {
+    name: 'Halo Pad',
+    vintage: 0.35,
+    osc2detune: 0.540,
+    osc1Saw: 1, osc1Pulse: 1, // both waveforms on = triangle
+    osc2Saw: 1, osc2Pulse: 0,
+    filterType: 1,
+    cutoff: 0.32, resonance: 0.22, filterMod: 0.38,
+    fAttack: 0.448, fDecay: 0.543, fSustain: 0.50, fRelease: 0.493,
+    aAttack: 0.431, aDecay: 0.531, aSustain: 1.00, aRelease: 0.531,
+    touch: 1,
+  },
+
+  // B7
+  {
+    name: 'Glass Fifths',
+    vintage: 0.30,
+    osc2detune: 0.515, // near-pure, so the fifth stays clean
+    osc1Saw: 1, osc1Pulse: 0,
+    osc2Saw: 0, osc2Pulse: 1,
+    osc2Freq: semi(7), // a fifth above
+    pulseWidth: 0.35,
+    fOsc2: 1,
+    cutoff: 0.48, resonance: 0.30, filterMod: 0.32,
+    fAttack: 0.181, fDecay: 0.448, fSustain: 0.45, fRelease: 0.391,
+    aAttack: 0.228, aDecay: 0.448, aSustain: 0.90, aRelease: 0.431,
+  },
+
+  // B8 — the filter envelope does the work: very slow attack into a big sweep.
+  {
+    name: 'Slow Sweep Pad',
+    vintage: 0.45,
+    osc2detune: 0.620,
+    osc1Saw: 1, osc2Saw: 1,
+    cutoff: 0.12, resonance: 0.35, filterMod: 0.80,
+    fAttack: 0.630, fDecay: 0.669, fSustain: 0.45, fRelease: 0.531,
+    aAttack: 0.368, aDecay: 0.531, aSustain: 1.00, aRelease: 0.531,
+  },
+
+  /* -----------------------------------------------------------------------
+   * GROUP C — BASSES, CLAVS, PERCUSSIVE AND LEADS
+   * Fast envelopes, more resonance, tight detune, and the OSCILLATORS
+   * section's SYNC and X-MOD for the lead voices. The leads use UNISON.
+   * Nominal cut-offs sit higher here because KBD tracking darkens the bottom
+   * two octaves by up to a fifth of the knob's travel.
+   * --------------------------------------------------------------------- */
+
+  // C1
+  {
+    name: 'Mini Bass',
+    vintage: 0.25,
+    osc2detune: 0.530,
+    osc1Freq: oct(0),
+    osc1Saw: 1, osc2Saw: 1,
+    cutoff: 0.36, resonance: 0.30, filterMod: 0.55,
+    kbdTrack: 1,
+    fAttack: 0.046, fDecay: 0.280, fSustain: 0.22, fRelease: 0.228,
+    aAttack: 0.046, aDecay: 0.368, aSustain: 0.85, aRelease: 0.199,
+    velo: 1,
+  },
+
+  // C2
+  {
+    name: 'Unison Sub',
+    vintage: 0.30,
+    unison: 1,
+    portamento: 0.05,
+    osc2detune: 0.540,
+    osc1Saw: 0, osc1Pulse: 1,
+    pulseWidth: 0.00, // fully counter-clockwise = 50 % square
+    osc2Saw: 1, osc2Pulse: 0,
+    filterType: 1,
+    cutoff: 0.34, resonance: 0.20, filterMod: 0.45,
+    fAttack: 0.058, fDecay: 0.342, fSustain: 0.30, fRelease: 0.246,
+    aAttack: 0.058, aDecay: 0.412, aSustain: 0.90, aRelease: 0.215,
+  },
+
+  // C3
+  {
+    name: 'Funk Clav',
+    vintage: 0.25,
+    osc2detune: 0.515,
+    osc1Saw: 0, osc1Pulse: 1,
+    osc2Saw: 0, osc2Pulse: 1,
+    pulseWidth: 0.78, // ~15 % duty, thin and reedy
+    cutoff: 0.40, resonance: 0.45, filterMod: 0.50,
+    fAttack: 0.000, fDecay: 0.207, fSustain: 0.00, fRelease: 0.190,
+    aAttack: 0.000, aDecay: 0.280, aSustain: 0.25, aRelease: 0.181,
+    velo: 3,
+  },
+
+  // C4 — amp sustain at zero with a short decay: a percussive blip.
+  {
+    name: 'Perc Blip',
+    vintage: 0.25,
+    osc2detune: 0.500,
+    osc1Saw: 0, osc1Pulse: 1,
+    pulseWidth: 0.60,
+    osc2Saw: 1, osc2Pulse: 0,
+    osc2Freq: semi(12),
+    fOsc2: 1,
+    cutoff: 0.42, resonance: 0.55, filterMod: 0.50,
+    fAttack: 0.000, fDecay: 0.181, fSustain: 0.00, fRelease: 0.170,
+    aAttack: 0.000, aDecay: 0.222, aSustain: 0.00, aRelease: 0.181,
+    velo: 3,
+  },
+
+  // C5
+  {
+    name: 'Sync Lead',
+    vintage: 0.30,
+    unison: 1,
+    portamento: 0.08,
+    osc2detune: 0.500,
+    osc1Saw: 1, osc2Saw: 1,
+    sync: 1,
+    osc2Freq: semi(19), // an octave and a fifth up, locked to osc 1
+    cutoff: 0.26, resonance: 0.30, filterMod: 0.62,
+    fAttack: 0.058, fDecay: 0.327, fSustain: 0.28, fRelease: 0.262,
+    aAttack: 0.067, aDecay: 0.342, aSustain: 0.95, aRelease: 0.215,
+    touch: 1,
+  },
+
+  // C6
+  {
+    name: 'X-Mod Lead',
+    vintage: 0.30,
+    unison: 1,
+    osc2detune: 0.500,
+    osc1Saw: 1, osc2Saw: 1,
+    osc2Freq: semi(7),
+    xmod: 1, // half: bright and reedy, not yet clangorous
+    cutoff: 0.30, resonance: 0.35, filterMod: 0.46,
+    fAttack: 0.058, fDecay: 0.317, fSustain: 0.32, fRelease: 0.262,
+    aAttack: 0.074, aDecay: 0.342, aSustain: 0.90, aRelease: 0.228,
+  },
+
+  // C7
+  {
+    name: 'Solo Lead',
+    vintage: 0.35,
+    unison: 1,
+    portamento: 0.18,
+    osc2detune: 0.600,
+    osc1Saw: 1, osc2Saw: 1,
+    lfoRate: 0.70, lfoSine: 1, // ~3.9 Hz vibrato
+    depth1: 0.13, d1Osc1: 1, d1Osc2: 1,
+    cutoff: 0.44, resonance: 0.20, filterMod: 0.30,
+    fAttack: 0.079, fDecay: 0.368, fSustain: 0.50, fRelease: 0.292,
+    aAttack: 0.089, aDecay: 0.368, aSustain: 1.00, aRelease: 0.246,
+    touch: 1,
+  },
+
+  // C8
+  {
+    name: 'Reso Bass',
+    vintage: 0.25,
+    osc2detune: 0.530,
+    osc1Saw: 1, osc1Pulse: 0,
+    osc2Saw: 0, osc2Pulse: 1,
+    pulseWidth: 0.50,
+    fOsc2: 1,
+    filterType: 1, // four-pole, where the resonance really bites
+    cutoff: 0.30, resonance: 0.68, filterMod: 0.62,
+    fAttack: 0.000, fDecay: 0.262, fSustain: 0.15, fRelease: 0.228,
+    aAttack: 0.046, aDecay: 0.368, aSustain: 0.80, aRelease: 0.199,
+    velo: 1,
+  },
+
+  /* -----------------------------------------------------------------------
+   * GROUP D — EFFECTS, SWEEPS, NOISE AND EXPERIMENTAL
+   * S/H modulation, the noise generator on its own into the filter, extreme
+   * filter settings and heavy cross modulation.
+   * --------------------------------------------------------------------- */
+
+  // D1
+  {
+    name: 'Sample & Hold',
+    vintage: 0.35,
+    osc2detune: 0.560,
+    osc1Saw: 1, osc2Saw: 1,
+    lfoSine: 0, lfoSH: 1, lfoRate: 0.55, // ~2 Hz
+    depth1: 0.30, d1Osc1: 1, d1Osc2: 1, // ~1 semitone of random pitch
+    cutoff: 0.45, resonance: 0.25, filterMod: 0.25,
+    fAttack: 0.058, fDecay: 0.368, fSustain: 0.60, fRelease: 0.292,
+    aAttack: 0.058, aDecay: 0.342, aSustain: 0.90, aRelease: 0.271,
+  },
+
+  // D2
+  {
+    name: 'Random Filter',
+    vintage: 0.35,
+    osc2detune: 0.580,
+    osc1Saw: 0, osc1Pulse: 1,
+    pulseWidth: 0.45,
+    osc2Saw: 1, osc2Pulse: 0,
+    lfoSine: 0, lfoSH: 1, lfoRate: 0.62, // ~3 Hz
+    depth1: 0.55, d1Filter: 1, // wide random cut-off jumps
+    cutoff: 0.32, resonance: 0.62, filterMod: 0.40,
+    fAttack: 0.046, fDecay: 0.310, fSustain: 0.35, fRelease: 0.246,
+    aAttack: 0.046, aDecay: 0.368, aSustain: 0.90, aRelease: 0.246,
+  },
+
+  // D3 — noise generator alone, filter swept slowly by the LFO.
+  {
+    name: 'Wind',
+    vintage: 0.30,
+    fOsc1: 0, fOsc2: 0, fNoise: 2, // noise only, at full level
+    kbdTrack: 0,
+    lfoSine: 1, lfoRate: 0.08, // ~0.15 Hz
+    depth1: 0.35, d1Filter: 1,
+    cutoff: 0.45, resonance: 0.55, filterMod: 0.00,
+    fAttack: 0.310, fDecay: 0.464, fSustain: 0.70, fRelease: 0.412,
+    aAttack: 0.368, aDecay: 0.464, aSustain: 1.00, aRelease: 0.464,
+  },
+
+  // D4
+  {
+    name: 'Surf',
+    vintage: 0.30,
+    fOsc1: 0, fOsc2: 0, fNoise: 2,
+    kbdTrack: 0,
+    lfoSine: 0, lfoSH: 1, lfoRate: 0.30,
+    depth1: 0.25, d1Filter: 1,
+    cutoff: 0.22, resonance: 0.30, filterMod: 0.45,
+    fAttack: 0.493, fDecay: 0.585, fSustain: 0.50, fRelease: 0.531,
+    aAttack: 0.412, aDecay: 0.531, aSustain: 1.00, aRelease: 0.531,
+  },
+
+  // D5
+  {
+    name: 'Filter Sweep',
+    vintage: 0.40,
+    osc2detune: 0.640,
+    osc1Saw: 1, osc2Saw: 1,
+    cutoff: 0.08, resonance: 0.50, filterMod: 0.95,
+    fAttack: 0.630, fDecay: 0.669, fSustain: 0.30, fRelease: 0.493,
+    aAttack: 0.181, aDecay: 0.531, aSustain: 1.00, aRelease: 0.493,
+  },
+
+  // D6
+  {
+    name: 'Siren',
+    vintage: 0.30,
+    unison: 1,
+    osc2detune: 0.500,
+    osc1Saw: 1, osc1Pulse: 0,
+    osc2Saw: 0, osc2Pulse: 1,
+    pulseWidth: 0.20,
+    lfoSine: 1, lfoRate: 0.22, // ~0.3 Hz
+    depth1: 0.65, d1Osc1: 1, d1Osc2: 1, // ~5 semitones, a deep slow sweep
+    cutoff: 0.50, resonance: 0.35, filterMod: 0.20,
+    fAttack: 0.124, fDecay: 0.448, fSustain: 0.60, fRelease: 0.342,
+    aAttack: 0.124, aDecay: 0.448, aSustain: 1.00, aRelease: 0.310,
+  },
+
+  // D7
+  {
+    name: 'Clangorous',
+    vintage: 0.30,
+    osc2detune: 0.500,
+    osc1Saw: 1, osc2Saw: 1,
+    osc2Freq: semi(25),
+    xmod: 2, // full: ring-modulator territory
+    cutoff: 0.26, resonance: 0.45, filterMod: 0.55,
+    fAttack: 0.000, fDecay: 0.235, fSustain: 0.10, fRelease: 0.246,
+    aAttack: 0.000, aDecay: 0.292, aSustain: 0.30, aRelease: 0.310,
+  },
+
+  // D8
+  {
+    name: 'Tape Warble',
+    vintage: 1.00, // maximum drift
+    portamento: 0.12,
+    osc2detune: 0.800, // ~+30 cents, deliberately out
+    osc1Saw: 1, osc2Saw: 1,
+    lfoSine: 1, lfoRate: 0.06, // ~0.13 Hz
+    depth1: 0.10, d1Osc2: 1, // slow wow on osc 2 only
+    cutoff: 0.34, resonance: 0.15, filterMod: 0.26,
+    fAttack: 0.310, fDecay: 0.493, fSustain: 0.55, fRelease: 0.431,
+    aAttack: 0.292, aDecay: 0.464, aSustain: 0.95, aRelease: 0.448,
+  },
+];
+
+/** Panel address ("A1".."D8") for a bank index. */
+function programAddress(index) {
+  const i = ((index % 32) + 32) % 32;
+  return `${'ABCD'[Math.floor(i / 8)]}${(i % 8) + 1}`;
+}
+
+/** Bank index for a panel address, e.g. ('C', 5) -> 20. */
+function programIndex(group, program) {
+  const g = typeof group === 'number' ? group : 'ABCD'.indexOf(String(group).toUpperCase());
+  return Math.max(0, g) * 8 + (Math.min(8, Math.max(1, program)) - 1);
+}
+
+
+// ===== src/ui.js ===================================================
+/*
+ * OB-X replica — control surface widgets and panel construction.
+ *
+ * The layout mirrors the front panel: MASTER, CONTROL, MODULATION,
+ * OSCILLATORS, FILTER, ENVELOPES on the upper row; KEYBOARD and PROGRAMMER
+ * on the lower row; the performance panel sits to the left of the keybed.
+ *
+ * Controls address the store by id. Programmable parameters use their bare
+ * parameter id; non-programmable ones (the manual's MANUAL section, the
+ * performance panel, keyboard modes) use a "g:" prefix.
+ */
+
+
+const KNOB_SWEEP = 300; // degrees of travel, -150..+150
+
+// ---------------------------------------------------------------------------
+// Small DOM helper
+// ---------------------------------------------------------------------------
+function el(tag, cls, attrs) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v === null || v === undefined) continue;
+    if (k === 'text') n.textContent = v;
+    else n.setAttribute(k, v);
+  }
+  return n;
+}
+
+function add(parent, ...kids) {
+  for (const k of kids) if (k) parent.appendChild(k);
+  return parent;
+}
+
+// ---------------------------------------------------------------------------
+// Knob
+// ---------------------------------------------------------------------------
+
+class Knob {
+  constructor(ui, { id, label, size = 'md', led = false, format }) {
+    this.ui = ui;
+    this.id = id;
+    this.format = format;
+
+    this.root = el('div', `ctl knob-ctl size-${size}`, { 'data-param': id });
+    if (led) {
+      this.led = el('i', 'led led-red knob-led');
+      add(this.root, this.led);
+    }
+    if (label) add(this.root, el('div', 'cap', { text: label }));
+
+    this.knob = el('div', 'knob', {
+      role: 'slider', tabindex: '0',
+      'aria-label': label || id,
+      'aria-valuemin': '0', 'aria-valuemax': '100',
+    });
+    this.ticks = el('div', 'knob-ticks');
+    for (let i = 0; i < 11; i++) {
+      const t = el('i', 'tick');
+      t.style.transform = `rotate(${-150 + i * 30}deg) translateY(-50%)`;
+      add(this.ticks, t);
+    }
+    this.body = el('div', 'knob-body');
+    this.pointer = el('div', 'knob-pointer');
+    add(this.body, this.pointer);
+    add(this.knob, this.ticks, this.body);
+    add(this.root, this.knob);
+
+    this.attach();
+  }
+
+  attach() {
+    const knob = this.knob;
+    let dragging = false, startY = 0, startX = 0, startVal = 0, moved = false;
+
+    const onMove = (ev) => {
+      if (!dragging) return;
+      ev.preventDefault();
+      const p = ev.touches ? ev.touches[0] : ev;
+      const dy = startY - p.clientY;
+      const dx = p.clientX - startX;
+      const fine = ev.shiftKey ? 0.25 : 1;
+      const delta = ((dy + dx) / 180) * fine;
+      if (Math.abs(dy) + Math.abs(dx) > 2) moved = true;
+      this.ui.setValue(this.id, clamp01(startVal + delta));
+    };
+    const onUp = () => {
+      dragging = false;
+      document.body.classList.remove('dragging');
+      this.ui.hideTip();
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    knob.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      knob.focus();
+      dragging = true; moved = false;
+      startY = ev.clientY; startX = ev.clientX;
+      startVal = this.ui.getValue(this.id);
+      document.body.classList.add('dragging');
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+    knob.addEventListener('dblclick', () => {
+      const p = PARAM_BY_ID[this.id];
+      this.ui.setValue(this.id, p ? p.def : 0.5);
+    });
+    knob.addEventListener('wheel', (ev) => {
+      ev.preventDefault();
+      const step = ev.shiftKey ? 0.005 : 0.02;
+      this.ui.setValue(this.id, clamp01(this.ui.getValue(this.id) - Math.sign(ev.deltaY) * step));
+    }, { passive: false });
+    knob.addEventListener('keydown', (ev) => {
+      const step = ev.shiftKey ? 0.005 : 0.02;
+      let d = 0;
+      if (ev.key === 'ArrowUp' || ev.key === 'ArrowRight') d = step;
+      else if (ev.key === 'ArrowDown' || ev.key === 'ArrowLeft') d = -step;
+      else if (ev.key === 'Home') return this.ui.setValue(this.id, 0);
+      else if (ev.key === 'End') return this.ui.setValue(this.id, 1);
+      else return;
+      ev.preventDefault();
+      this.ui.setValue(this.id, clamp01(this.ui.getValue(this.id) + d));
+    });
+    knob.addEventListener('pointerenter', () => this.ui.showTip(this));
+    knob.addEventListener('pointerleave', () => { if (!dragging) this.ui.hideTip(); });
+  }
+
+  render(v) {
+    const p = PARAM_BY_ID[this.id];
+    const shown = p ? quantise(p, v) : v;
+    this.pointer.style.transform = `rotate(${-KNOB_SWEEP / 2 + shown * KNOB_SWEEP}deg)`;
+    this.knob.setAttribute('aria-valuenow', Math.round(shown * 100));
+    this.knob.setAttribute('aria-valuetext', this.text(shown));
+    if (this.led) this.led.classList.toggle('on', Math.abs(shown - 0.5) > 0.02);
+  }
+
+  text(v) {
+    return this.format ? this.format(v) : `${Math.round(v * 100)}`;
+  }
+}
+
+function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+// ---------------------------------------------------------------------------
+// Rocker switch (on/off or multi-state, with one or two LEDs)
+// ---------------------------------------------------------------------------
+
+class Rocker {
+  constructor(ui, { id, label, leds = ['red'], ledCaps, states = 2, wide = false, momentary = false }) {
+    this.ui = ui;
+    this.id = id;
+    this.states = states;
+    this.momentary = momentary;
+
+    this.root = el('div', `ctl sw-ctl${wide ? ' wide' : ''}`, { 'data-param': id });
+    if (ledCaps) {
+      const caps = el('div', 'led-caps');
+      for (const c of ledCaps) add(caps, el('span', 'led-cap', { text: c }));
+      add(this.root, caps);
+    }
+    this.btn = el('button', 'rocker', { type: 'button', 'aria-label': label || id });
+    add(this.btn, el('span', 'sw-label', { text: label || '' }));
+    this.leds = leds.map((colour) => el('i', `led led-${colour}`));
+    const ledBox = el('span', `leds n${this.leds.length}`);
+    add(ledBox, ...this.leds);
+    add(this.btn, ledBox, el('span', 'rocker-face'));
+    add(this.root, this.btn);
+
+    if (momentary) {
+      this.btn.addEventListener('pointerdown', () => this.ui.momentary(this.id, true));
+      const up = () => this.ui.momentary(this.id, false);
+      this.btn.addEventListener('pointerup', up);
+      this.btn.addEventListener('pointerleave', up);
+    } else {
+      this.btn.addEventListener('click', () => this.ui.toggle(this.id, this.states));
+    }
+  }
+
+  render(v) {
+    const n = Math.round(v);
+    this.btn.setAttribute('aria-pressed', n > 0 ? 'true' : 'false');
+    this.root.classList.toggle('on', n > 0);
+    if (this.leds.length === 1) {
+      this.leds[0].classList.toggle('on', n > 0);
+    } else if (this.states === 2) {
+      // A two-position selector lights one LED or the other — the filter's
+      // 2 / 4 pole choice and the lever's Mod / Arp mode.
+      this.leds[0].classList.toggle('on', n === 0);
+      this.leds[1].classList.toggle('on', n === 1);
+    } else {
+      // Otherwise the pair reads as a small binary display, matching the
+      // panel's FIL / AMP and HALF / FULL indicators.
+      this.leds[0].classList.toggle('on', n === 1 || n === 3);
+      this.leds[1].classList.toggle('on', n === 2 || n === 3);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Panel construction
+// ---------------------------------------------------------------------------
+
+class Surface {
+  constructor(store) {
+    this.store = store;
+    this.controls = new Map(); // id -> widget[]
+    this.tooltip = document.getElementById('tooltip');
+  }
+
+  // --- store plumbing ------------------------------------------------------
+  getValue(id) { return this.store.get(id); }
+  setValue(id, v) {
+    this.store.set(id, v);
+    const w = this.controls.get(id);
+    if (w) for (const c of w) if (c.showTipNow !== false) this.showTip(c);
+  }
+  toggle(id, states) {
+    const cur = Math.round(this.store.get(id) || 0);
+    this.store.set(id, (cur + 1) % states);
+  }
+  momentary(id, down) { this.store.set(id, down ? 1 : 0); }
+
+  register(widget) {
+    if (!this.controls.has(widget.id)) this.controls.set(widget.id, []);
+    this.controls.get(widget.id).push(widget);
+    return widget.root;
+  }
+
+  refresh() {
+    for (const id of this.controls.keys()) this.renderOne(id);
+  }
+
+  renderOne(id) {
+    const widgets = this.controls.get(id);
+    if (!widgets) return;
+    const v = this.store.get(id);
+    for (const w of widgets) w.render(typeof v === 'number' ? v : 0);
+  }
+
+  showTip(widget) {
+    if (!this.tooltip || !widget.text) return;
+    const r = widget.root.getBoundingClientRect();
+    this.tooltip.textContent = widget.text(this.store.get(widget.id));
+    this.tooltip.hidden = false;
+    this.tooltip.style.left = `${r.left + r.width / 2}px`;
+    this.tooltip.style.top = `${r.top - 6}px`;
+  }
+  hideTip() { if (this.tooltip) this.tooltip.hidden = true; }
+
+  // --- widget factories ----------------------------------------------------
+  knob(opts) { const k = new Knob(this, opts); return this.register(k); }
+  sw(opts) { const s = new Rocker(this, opts); return this.register(s); }
+
+  // -------------------------------------------------------------------------
+  build(root, perfRoot, keybedRoot) {
+    add(root, this.masterPanel(), this.controlPanel(), this.modulationPanel(),
+              this.oscillatorPanel(), this.filterPanel(), this.envelopePanel(),
+              this.keyboardPanel(), this.programmerPanel());
+    add(perfRoot, ...this.perfPanel());
+    this.buildKeybed(keybedRoot);
+    this.refresh();
+  }
+
+  panel(key, title, cls = '') {
+    const p = el('section', `panel panel-${key} ${cls}`.trim(), { 'data-panel': key });
+    p.appendChild(el('div', 'panel-inner'));
+    if (title) p.appendChild(el('div', 'panel-name', { text: title }));
+    return p;
+  }
+
+  row(cls, ...kids) { return add(el('div', `row ${cls}`.trim()), ...kids); }
+  col(cls, ...kids) { return add(el('div', `col ${cls}`.trim()), ...kids); }
+
+  // --- MASTER (not programmable) ------------------------------------------
+  masterPanel() {
+    const p = this.panel('master', 'MASTER');
+    add(p.firstChild,
+      this.row('knobs',
+        this.knob({ id: 'g:masterVol', label: 'MASTER VOL', format: pct }),
+        this.knob({ id: 'g:volBalance', label: 'VOL/BALANCE', format: pct })),
+      this.row('switches',
+        this.sw({ id: 'g:tune', label: 'TUNE', momentary: true }),
+        this.sw({ id: 'g:hold', label: 'HOLD' }),
+        this.sw({ id: 'g:chord', label: 'CHORD' })),
+      this.row('knobs single',
+        this.knob({ id: 'g:masterTune', label: 'MASTER TUNE', format: cents })));
+    return p;
+  }
+
+  // --- CONTROL -------------------------------------------------------------
+  controlPanel() {
+    const p = this.panel('control', 'CONTROL');
+    add(p.firstChild,
+      this.row('knobs',
+        this.knob({ id: 'vintage', label: 'VINTAGE', format: pct }),
+        this.knob({ id: 'portamento', label: 'PORTAMENTO', format: glide })),
+      this.row('switches',
+        this.sw({ id: 'velo', label: 'VELO', leds: ['amber', 'red'], ledCaps: ['FIL', 'AMP'], states: 4 }),
+        this.sw({ id: 'touch', label: 'TOUCH', leds: ['amber', 'red'], ledCaps: ['FIL', 'AMP'], states: 4 }),
+        this.sw({ id: 'unison', label: 'UNISON' })),
+      this.row('knobs single',
+        this.knob({ id: 'osc2detune', label: 'OSC 2 DETUNE', led: true, format: detune })));
+    return p;
+  }
+
+  // --- MODULATION ----------------------------------------------------------
+  modulationPanel() {
+    const p = this.panel('modulation', 'MODULATION');
+    add(p.firstChild,
+      this.col('mod-col',
+        el('div', 'col-cap', { text: 'LFO' }),
+        this.knob({ id: 'lfoRate', label: 'RATE', format: hz }),
+        this.sw({ id: 'lfoSine', label: 'SINE' }),
+        this.sw({ id: 'lfoSquare', label: 'SQUARE' }),
+        this.sw({ id: 'lfoSH', label: 'S/H' })),
+      this.col('mod-col',
+        el('div', 'col-cap', { text: 'DESTINATION' }),
+        this.knob({ id: 'depth1', label: 'DEPTH 1', format: pct }),
+        this.sw({ id: 'd1Osc1', label: 'OSC 1' }),
+        this.sw({ id: 'd1Osc2', label: 'OSC 2' }),
+        this.sw({ id: 'd1Filter', label: 'FILTER' })),
+      this.col('mod-col',
+        el('div', 'col-cap', { text: 'DESTINATION' }),
+        this.knob({ id: 'depth2', label: 'DEPTH 2', format: pct }),
+        this.sw({ id: 'd2Pwm1', label: 'PWM 1' }),
+        this.sw({ id: 'd2Pwm2', label: 'PWM 2' }),
+        this.sw({ id: 'd2Volume', label: 'VOLUME' })));
+    return p;
+  }
+
+  // --- OSCILLATORS ---------------------------------------------------------
+  oscillatorPanel() {
+    const p = this.panel('oscillators', 'OSCILLATORS');
+    const waveGroup = (n, sawId, pulseId) => {
+      const g = el('div', 'sw-group waveform');
+      add(g, el('div', 'group-cap', { text: 'WAVEFORM' }),
+             this.row('pair',
+               this.sw({ id: sawId, label: 'SAW' }),
+               this.sw({ id: pulseId, label: 'PULSE' })),
+             el('div', 'group-sub', { text: 'TRIANGLE' }));
+      return g;
+    };
+    add(p.firstChild,
+      this.row('knobs',
+        add(el('div', 'osc-slot'), el('div', 'osc-num', { text: '1' }),
+            this.knob({ id: 'osc1Freq', label: 'FREQUENCY', format: octaves })),
+        add(el('div', 'osc-slot'),
+            this.knob({ id: 'pulseWidth', label: 'PULSE WIDTH', format: duty })),
+        add(el('div', 'osc-slot'), el('div', 'osc-num', { text: '2' }),
+            this.knob({ id: 'osc2Freq', label: 'FREQUENCY', format: semis }))),
+      this.row('switches',
+        waveGroup(1, 'osc1Saw', 'osc1Pulse'),
+        add(el('div', 'sw-group xmod'),
+            el('div', 'group-cap', { text: 'X-MOD' }),
+            this.row('pair',
+              this.sw({ id: 'xmod', label: 'MOD', leds: ['amber', 'red'], ledCaps: ['HALF', 'FULL'], states: 3 }),
+              this.sw({ id: 'sync', label: 'SYNC' }))),
+        waveGroup(2, 'osc2Saw', 'osc2Pulse')));
+    return p;
+  }
+
+  // --- FILTER --------------------------------------------------------------
+  filterPanel() {
+    const p = this.panel('filter', 'FILTER');
+    add(p.firstChild,
+      this.row('knobs',
+        this.knob({ id: 'cutoff', label: 'FREQUENCY', format: pct }),
+        this.knob({ id: 'resonance', label: 'RESONANCE', format: pct }),
+        this.knob({ id: 'filterMod', label: 'MODULATION', format: pct })),
+      this.row('switches',
+        this.sw({ id: 'filterType', label: 'TYPE', leds: ['amber', 'red'], ledCaps: ['2', '4'], states: 2 }),
+        this.sw({ id: 'fOsc1', label: 'OSC 1' }),
+        this.sw({ id: 'fOsc2', label: 'OSC 2', leds: ['amber', 'red'], ledCaps: ['HALF', 'FULL'], states: 3 }),
+        this.sw({ id: 'fNoise', label: 'NOISE', leds: ['amber', 'red'], ledCaps: ['HALF', 'FULL'], states: 3 }),
+        this.sw({ id: 'kbdTrack', label: 'KBD' })));
+    return p;
+  }
+
+  // --- ENVELOPES -----------------------------------------------------------
+  envelopePanel() {
+    const p = this.panel('envelopes', '');
+    add(p.firstChild,
+      el('div', 'env-title top', { text: 'FILTER ENVELOPE' }),
+      this.row('knobs adsr',
+        this.knob({ id: 'fAttack', label: 'ATTACK', format: msTime }),
+        this.knob({ id: 'fDecay', label: 'DECAY', format: msTime }),
+        this.knob({ id: 'fSustain', label: 'SUSTAIN', format: pct }),
+        this.knob({ id: 'fRelease', label: 'RELEASE', format: msTime })),
+      this.row('knobs adsr',
+        this.knob({ id: 'aAttack', label: 'ATTACK', format: msTime }),
+        this.knob({ id: 'aDecay', label: 'DECAY', format: msTime }),
+        this.knob({ id: 'aSustain', label: 'SUSTAIN', format: pct }),
+        this.knob({ id: 'aRelease', label: 'RELEASE', format: msTime })),
+      el('div', 'env-title bottom', { text: 'VOLUME ENVELOPE' }));
+    return p;
+  }
+
+  // --- KEYBOARD ------------------------------------------------------------
+  keyboardPanel() {
+    const p = this.panel('keyboard', 'KEYBOARD');
+    add(p.firstChild,
+      this.row('switches',
+        this.sw({ id: 'g:split', label: 'SPLIT' }),
+        this.sw({ id: 'g:double', label: 'DOUBLE' }),
+        this.sw({ id: 'g:lower', label: 'LOWER' }),
+        this.sw({ id: 'g:upper', label: 'UPPER' })));
+    return p;
+  }
+
+  // --- PROGRAMMER ----------------------------------------------------------
+  programmerPanel() {
+    const p = this.panel('programmer', 'PROGRAMMER');
+    const progs = this.row('progs');
+    for (let i = 1; i <= 8; i++) {
+      add(progs, this.sw({ id: `g:prog${i}`, label: String(i) }));
+    }
+    this.display = el('div', 'lcd');
+    const lcdTop = el('div', 'lcd-row lcd-top');
+    add(lcdTop, el('span', 'lcd-tag', { text: 'Bank' }), el('span', 'lcd-tag right', { text: 'Prog' }));
+    this.lcdBank = el('span', 'lcd-text bank', { text: 'OB-Xa' });
+    this.lcdNum = el('span', 'lcd-text num', { text: 'A1' });
+    this.lcdName = el('div', 'lcd-row lcd-name', { text: 'Brass Ensemble' });
+    add(this.display, lcdTop, add(el('div', 'lcd-row lcd-mid'), this.lcdBank, this.lcdNum), this.lcdName);
+
+    add(p.firstChild,
+      this.row('switches lead',
+        this.sw({ id: 'g:manual', label: 'MANUAL' }),
+        this.sw({ id: 'g:page2', label: 'PAGE 2' })),
+      add(el('div', 'lcd-block'),
+        add(el('div', 'lcd-knob'), el('div', 'cap tiny', { text: 'BANK' }),
+            this.knob({ id: 'g:bank', label: '', size: 'xs', format: bankName })),
+        this.display,
+        add(el('div', 'lcd-knob'), el('div', 'cap tiny', { text: 'GROUP' }),
+            this.knob({ id: 'g:group', label: '', size: 'xs', format: groupName }))),
+      progs,
+      this.row('switches trail',
+        this.sw({ id: 'g:global', label: 'GLOBAL' }),
+        this.sw({ id: 'g:write', label: 'WRITE' })));
+    return p;
+  }
+
+  setDisplay({ bank, num, name }) {
+    if (bank !== undefined) this.lcdBank.textContent = bank;
+    if (num !== undefined) this.lcdNum.textContent = num;
+    if (name !== undefined) this.lcdName.textContent = name;
+  }
+
+  // --- performance panel (left of the keybed) ------------------------------
+  perfPanel() {
+    const top = el('div', 'perf-row perf-top');
+    add(top,
+      add(el('div', 'perf-cell'),
+          this.knob({ id: 'g:arpRate', label: 'RATE', size: 'sm', led: true, format: arpRate })),
+      add(el('div', 'perf-cell perf-lu'),
+          this.sw({ id: 'g:perfLower', label: 'LOWER' }),
+          this.sw({ id: 'g:perfUpper', label: 'UPPER' })),
+      add(el('div', 'perf-cell'),
+          this.knob({ id: 'g:modDepth', label: 'DEPTH', size: 'sm', format: pct })));
+
+    const mid = el('div', 'perf-row perf-mid');
+    this.bender = el('div', 'bender');
+    this.benderLever = el('div', 'bender-lever', { role: 'slider', tabindex: '0', 'aria-label': 'Pitch bend / modulation lever' });
+    add(this.bender, this.benderLever);
+    add(mid,
+      add(el('div', 'perf-cell'),
+          this.sw({ id: 'g:arpMode', label: 'MODE', leds: ['red', 'amber'], ledCaps: ['Mod', 'Arp'], states: 2 })),
+      this.bender,
+      add(el('div', 'perf-cell'),
+          this.sw({ id: 'g:arpOn', label: '' }),
+          el('div', 'perf-cap', { text: 'ARPEGGIATE' })));
+
+    const bot = el('div', 'perf-row perf-bot');
+    add(bot,
+      add(el('div', 'perf-group arp'),
+          el('div', 'group-cap rule', { text: 'ARPEGGIATOR' }),
+          add(el('div', 'perf-btns'),
+              labelled('HOLD', this.sw({ id: 'g:arpHold', label: '' })),
+              labelled('KBD', this.sw({ id: 'g:arpKbd', label: '' })),
+              labelled('DOWN', this.sw({ id: 'g:arpDown', label: '' })),
+              labelled('UP', this.sw({ id: 'g:arpUp', label: '' })))),
+      add(el('div', 'perf-group bend'),
+          add(el('div', 'perf-btns'),
+              labelled('OSC 2 ONLY', this.sw({ id: 'g:bendOsc2Only', label: '' })),
+              labelled('AMOUNT', this.sw({ id: 'g:bendRange', label: '' }))),
+          el('div', 'group-cap rule', { text: 'BEND' })),
+      add(el('div', 'perf-group transpose'),
+          add(el('div', 'perf-btns'),
+              labelled('DOWN', this.sw({ id: 'g:transposeDown', label: '' })),
+              labelled('UP', this.sw({ id: 'g:transposeUp', label: '' }))),
+          el('div', 'group-cap rule', { text: 'TRANSPOSE' })));
+
+    return [top, mid, bot];
+  }
+
+  // --- keybed --------------------------------------------------------------
+  buildKeybed(root) {
+    this.keys = new Map();
+    const WHITE = [0, 2, 4, 5, 7, 9, 11];
+    const whites = el('div', 'whites');
+    const blacks = el('div', 'blacks');
+    let whiteIndex = 0;
+
+    for (let n = KEY_RANGE.first; n <= KEY_RANGE.last; n++) {
+      const pc = n % 12;
+      if (WHITE.includes(pc)) {
+        const k = el('div', 'key white', { 'data-note': String(n) });
+        add(whites, k);
+        this.keys.set(n, k);
+        whiteIndex++;
+      } else {
+        const k = el('div', 'key black', { 'data-note': String(n) });
+        k.style.setProperty('--slot', String(whiteIndex));
+        add(blacks, k);
+        this.keys.set(n, k);
+      }
+    }
+    root.style.setProperty('--white-count', String(whiteIndex));
+    add(root, whites, blacks);
+  }
+
+  setKeyDown(note, on) {
+    const k = this.keys?.get(note);
+    if (k) k.classList.toggle('down', on);
+  }
+}
+
+function labelled(text, node) {
+  const wrap = el('div', 'perf-btn');
+  add(wrap, el('span', 'perf-btn-cap', { text }), node);
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
+// Value formatters (tooltip readouts)
+// ---------------------------------------------------------------------------
+const pct = (v) => `${Math.round(v * 100)}%`;
+const hz = (v) => `${(0.1 * Math.pow(200, v)).toFixed(2)} Hz`;
+const glide = (v) => (v <= 0.001 ? 'off' : `${Math.round(2000 * v * v)} ms`);
+const cents = (v) => `${(v - 0.5) * 100 > 0 ? '+' : ''}${Math.round((v - 0.5) * 100)} cents`;
+const detune = (v) => `${(v - 0.5) * 100 > 0 ? '+' : ''}${((v - 0.5) * 100).toFixed(1)} cents`;
+const octaves = (v) => `+${Math.round(v * 4)} oct`;
+const semis = (v) => `+${Math.round(v * 60)} semitones`;
+const duty = (v) => `${(50 - v * 45).toFixed(0)}% duty`;
+const msTime = (v) => {
+  const ms = 1 + 9999 * v * v * v;
+  return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
+};
+const arpRate = (v) => `${(0.5 + v * 15).toFixed(1)} Hz`;
+const bankName = () => 'Factory';
+const groupName = (v) => 'ABCD'[Math.min(3, Math.floor(v * 4))];
+
+
+// ===== src/app.js ==================================================
+/*
+ * OB-X replica — application layer.
+ *
+ * Owns the programmer (program memory, MANUAL / EDIT / WRITE), keyboard
+ * routing (whole / split / double), the performance panel, the arpeggiator,
+ * MIDI and computer-keyboard input, and the bridge to the AudioWorklet.
+ */
+
+
+
+
+// Bumped when a stored parameter changes meaning rather than just its value,
+// so an old save is discarded instead of being reinterpreted. v2: X-MOD went
+// from a continuous knob to an off / half / full selector.
+const STORAGE_KEY = 'obx.state.v2';
+
+/** Globals the DSP holds a copy of. */
+const ENGINE_GLOBALS = new Set([
+  'masterVol', 'volBalance', 'masterTune', 'modDepth', 'bendRange', 'bendOsc2Only',
+]);
+
+/** Globals whose change affects no control but their own. */
+const SELF_CONTAINED_GLOBALS = new Set([
+  'masterVol', 'volBalance', 'masterTune', 'modDepth', 'arpRate', 'bank',
+  'global', 'bendRange', 'bendOsc2Only', 'arpOn', 'arpHold', 'arpMode',
+  'tune', 'hold', 'chord',
+]);
+const GROUPS = 'ABCD';
+const PAGES = 2;              // PAGE 2 doubles the programmer to 64 slots
+const PROGRAMS_PER_PAGE = 32; // 4 groups x 8
+
+// ---------------------------------------------------------------------------
+// Store — everything the panel can address
+// ---------------------------------------------------------------------------
+
+class Store {
+  constructor() {
+    this.surface = null;
+    this.engine = null;
+
+    this.bank = this.buildBank();
+    this.manualPanel = defaultProgram('Manual Panel');
+    this.live = [normaliseProgram(this.bank[0]), normaliseProgram(this.bank[8])];
+
+    this.g = { ...GLOBALS };
+
+    this.sel = [{ page: 0, group: 0, prog: 0 }, { page: 0, group: 1, prog: 0 }];
+    this.editLayer = 0;
+    this.mode = 'program';   // 'program' | 'manual'
+    this.writeArmed = false;
+    this.splitNote = 60;
+    this.armSplit = false;
+    this.dirty = false;
+
+    this.restore();
+  }
+
+  buildBank() {
+    const bank = [];
+    for (let page = 0; page < PAGES; page++) {
+      for (let i = 0; i < PROGRAMS_PER_PAGE; i++) {
+        const src = page === 0 ? FACTORY_BANK[i] : null;
+        bank.push(normaliseProgram(src, `Program ${i + 1}`));
+      }
+    }
+    return bank;
+  }
+
+  slotIndex(sel) { return sel.page * PROGRAMS_PER_PAGE + sel.group * 8 + sel.prog; }
+
+  // --- addressing ----------------------------------------------------------
+
+  get(id) {
+    if (id.startsWith('g:')) return this.g[id.slice(2)] ?? 0;
+    return this.live[this.editLayer][id] ?? 0;
+  }
+
+  set(id, raw) {
+    if (id.startsWith('g:')) return this.setGlobal(id.slice(2), raw);
+
+    const p = PARAM_BY_ID[id];
+    if (!p) return;
+    const v = quantise(p, clampParam(p, raw));
+    this.live[this.editLayer][id] = v;
+    this.engine?.setParam(this.editLayer, id, v);
+    this.dirty = true;
+    this.surface?.renderOne(id);
+    this.updateDisplay();
+  }
+
+  setGlobal(key, raw) {
+    const v = typeof raw === 'number' ? raw : 0;
+    switch (key) {
+      case 'tune':
+        this.g.tune = v;
+        if (v) this.engine?.autoTune();
+        break;
+
+      case 'hold':
+        this.g.hold = v ? 1 : 0;
+        if (!this.g.hold) this.app?.releaseHeld();
+        break;
+
+      case 'chord':
+        this.g.chord = v ? 1 : 0;
+        this.app?.chordChanged(this.g.chord);
+        break;
+
+      case 'split':
+      case 'double': {
+        const on = v ? 1 : 0;
+        this.g.split = key === 'split' ? on : (on ? 0 : this.g.split);
+        this.g.double = key === 'double' ? on : (on ? 0 : this.g.double);
+        if (key === 'split' && on) this.armSplit = true;
+        this.applyKeyboardMode();
+        break;
+      }
+
+      case 'lower':
+      case 'upper': {
+        const layer = key === 'lower' ? 1 : 0;
+        this.selectLayer(layer);
+        break;
+      }
+      case 'perfLower': return this.selectLayer(1);
+      case 'perfUpper': return this.selectLayer(0);
+
+      case 'manual':
+        this.g.manual = v ? 1 : 0;
+        this.mode = this.g.manual ? 'manual' : 'program';
+        if (this.mode === 'manual') this.loadProgram(this.manualPanel, false);
+        else this.recallCurrent();
+        break;
+
+      case 'page2':
+        this.g.page2 = v ? 1 : 0;
+        this.sel[this.editLayer].page = this.g.page2;
+        this.recallCurrent();
+        break;
+
+      case 'bank':
+        this.g.bank = Math.min(1, Math.max(0, v));
+        this.updateDisplay();
+        break;
+
+      case 'group': {
+        this.g.group = Math.min(1, Math.max(0, v));
+        const grp = Math.min(3, Math.floor(this.g.group * 4));
+        this.sel[this.editLayer].group = grp;
+        this.recallCurrent();
+        break;
+      }
+
+      case 'global':
+        this.g.global = v ? 1 : 0;
+        this.updateDisplay();
+        break;
+
+      case 'write':
+        // With GLOBAL lit, WRITE restores the factory bank instead of arming
+        // a store — the only way back once all 64 slots have been written.
+        if (this.g.global) {
+          if (this.app?.confirmReset()) {
+            this.factoryReset();
+            this.g.global = 0;
+            this.flash('FACTORY RESTORED');
+          }
+          this.g.write = 0;
+          this.writeArmed = false;
+          break;
+        }
+        this.writeArmed = !this.writeArmed;
+        this.g.write = this.writeArmed ? 1 : 0;
+        this.updateDisplay();
+        break;
+
+      case 'arpMode':
+      case 'arpOn':
+      case 'arpHold':
+        this.g[key] = key === 'arpMode' ? Math.round(v) : (v ? 1 : 0);
+        this.app?.arpChanged();
+        break;
+
+      case 'arpKbd':
+        this.g.arpKbd = v ? 1 : 0;
+        if (this.g.arpKbd) { this.g.arpUp = 0; this.g.arpDown = 0; }
+        this.app?.arpChanged();
+        break;
+
+      case 'arpUp':
+      case 'arpDown':
+        this.g[key] = v ? 1 : 0;
+        if (this.g[key]) this.g.arpKbd = 0;
+        this.app?.arpChanged();
+        break;
+
+      case 'transposeDown':
+      case 'transposeUp': {
+        const on = v ? 1 : 0;
+        this.g.transposeDown = key === 'transposeDown' ? on : (on ? 0 : this.g.transposeDown);
+        this.g.transposeUp = key === 'transposeUp' ? on : (on ? 0 : this.g.transposeUp);
+        this.engine?.setGlobal('transpose', this.g.transposeUp ? 1 : this.g.transposeDown ? -1 : 0);
+        break;
+      }
+
+      default:
+        if (/^prog[1-8]$/.test(key)) return this.selectProgram(Number(key.slice(4)) - 1);
+        this.g[key] = v;
+        break;
+    }
+
+    // Anything the engine mirrors directly.
+    if (ENGINE_GLOBALS.has(key)) {
+      this.g[key] = v;
+      this.engine?.setGlobal(key, v);
+    }
+
+    // Controls that only light their own LED do not need the whole panel
+    // redrawn — this path runs on every pointer move while a knob is turning.
+    if (SELF_CONTAINED_GLOBALS.has(key)) this.surface?.renderOne(`g:${key}`);
+    else this.surface?.refresh();
+
+    this.updateDisplay();
+    this.persist();
+  }
+
+  // --- programmer ----------------------------------------------------------
+
+  selectLayer(layer) {
+    if (this.g.split || this.g.double) this.editLayer = layer;
+    else this.editLayer = 0;
+    this.g.lower = this.editLayer === 1 ? 1 : 0;
+    this.g.upper = this.editLayer === 0 ? 1 : 0;
+    this.g.perfLower = this.g.lower;
+    this.g.perfUpper = this.g.upper;
+    const sel = this.sel[this.editLayer];
+    this.g.group = sel.group / 4 + 0.125;
+    this.g.page2 = sel.page;
+    this.syncProgLeds();
+    this.surface?.refresh();
+    this.updateDisplay();
+  }
+
+  selectProgram(index) {
+    const sel = this.sel[this.editLayer];
+    if (this.writeArmed) {
+      // "Press and hold WRITE ... continue to hold WRITE and select a GROUP
+      //  ... and a PROGRAM" — here WRITE arms, then the program key commits.
+      sel.prog = index;
+      this.bank[this.slotIndex(sel)] = { ...this.live[this.editLayer] };
+      this.writeArmed = false;
+      this.g.write = 0;
+      this.dirty = false;
+      this.flash(`WRITTEN ${this.slotName(sel)}`);
+    } else {
+      sel.prog = index;
+      this.mode = 'program';
+      this.g.manual = 0;
+      this.recallCurrent();
+    }
+    this.syncProgLeds();
+    this.persist();
+    this.surface?.refresh();
+  }
+
+  syncProgLeds() {
+    const sel = this.sel[this.editLayer];
+    for (let i = 1; i <= 8; i++) this.g[`prog${i}`] = sel.prog === i - 1 ? 1 : 0;
+  }
+
+  recallCurrent() {
+    const sel = this.sel[this.editLayer];
+    this.loadProgram(this.bank[this.slotIndex(sel)], true);
+  }
+
+  loadProgram(prog, markClean) {
+    const target = normaliseProgram(prog, prog?.name);
+    this.live[this.editLayer] = target;
+    this.engine?.sendPatch(this.editLayer, target);
+    if (markClean) this.dirty = false;
+    this.syncProgLeds();
+    this.surface?.refresh();
+    this.updateDisplay();
+  }
+
+  slotName(sel = this.sel[this.editLayer]) {
+    return `${sel.page ? 'P2 ' : ''}${GROUPS[sel.group]}${sel.prog + 1}`;
+  }
+
+  flash(text) {
+    this._flash = text;
+    clearTimeout(this._flashTimer);
+    this._flashTimer = setTimeout(() => { this._flash = null; this.updateDisplay(); }, 1400);
+    this.updateDisplay();
+  }
+
+  updateDisplay() {
+    if (!this.surface) return;
+    const sel = this.sel[this.editLayer];
+    let name = this._flash;
+    if (!name) {
+      if (this.g.global) name = `${this.app?.midiName || 'No MIDI in'} · WRITE=reset`;
+      else if (this.mode === 'manual') name = 'Manual Panel';
+      else name = this.live[this.editLayer].name || 'Program';
+    }
+    this.surface.setDisplay({
+      bank: this.g.bank < 0.5 ? 'Factory' : 'User',
+      num: this.mode === 'manual' ? 'MAN' : `${this.slotName(sel)}${this.dirty ? '*' : ''}`,
+      name,
+    });
+  }
+
+  applyKeyboardMode() {
+    const mode = this.g.split ? 'split' : this.g.double ? 'double' : 'whole';
+    this.mode2 = mode;
+    if (mode === 'whole') {
+      this.engine?.setPools([[0, 1, 2, 3, 4, 5, 6, 7], []]);
+      this.selectLayer(0);
+    } else {
+      this.engine?.setPools([[0, 1, 2, 3], [4, 5, 6, 7]]);
+      this.engine?.sendPatch(1, this.live[1]);
+    }
+    this.updateDisplay();
+  }
+
+  layersForNote(note) {
+    if (this.g.double) return [0, 1];
+    if (this.g.split) return [note < this.splitNote ? 1 : 0];
+    return [0];
+  }
+
+  // --- persistence ---------------------------------------------------------
+
+  persist() {
+    clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          bank: this.bank, manualPanel: this.manualPanel, g: this.g,
+          sel: this.sel, splitNote: this.splitNote,
+        }));
+      } catch { /* storage unavailable — run in memory only */ }
+    }, 400);
+  }
+
+  restore() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { saved = null; }
+    if (!saved) return;
+    if (Array.isArray(saved.bank) && saved.bank.length === PAGES * PROGRAMS_PER_PAGE) {
+      this.bank = saved.bank.map((p, i) => normaliseProgram(p, `Program ${i + 1}`));
+    }
+    if (saved.manualPanel) this.manualPanel = normaliseProgram(saved.manualPanel, 'Manual Panel');
+    if (saved.g) Object.assign(this.g, saved.g);
+    if (Array.isArray(saved.sel)) this.sel = saved.sel;
+    if (typeof saved.splitNote === 'number') this.splitNote = saved.splitNote;
+    this.live = [normaliseProgram(this.bank[this.slotIndex(this.sel[0])]),
+                 normaliseProgram(this.bank[this.slotIndex(this.sel[1])])];
+  }
+
+  factoryReset() {
+    this.bank = this.buildBank();
+    this.sel = [{ page: 0, group: 0, prog: 0 }, { page: 0, group: 1, prog: 0 }];
+    this.editLayer = 0;
+    this.g.page2 = 0;
+    this.mode = 'program';
+    this.g.manual = 0;
+    this.recallCurrent();
+    this.syncProgLeds();
+    this.persist();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Engine — AudioContext + worklet bridge
+// ---------------------------------------------------------------------------
+
+class Engine {
+  constructor() {
+    this.ctx = null;
+    this.node = null;
+    this.ready = false;
+  }
+
+  async start() {
+    if (this.ready) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    await addWorklet(this.ctx);
+    this.node = new AudioWorkletNode(this.ctx, 'obx-processor', {
+      numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2],
+    });
+    this.out = this.ctx.createGain();
+    this.out.gain.value = 1;
+    this.node.connect(this.out).connect(this.ctx.destination);
+    this.ready = true;
+  }
+
+  post(msg) { if (this.ready) this.node.port.postMessage(msg); }
+  sendPatch(layer, params) {
+    const clean = {};
+    for (const id of PARAM_IDS) clean[id] = params[id];
+    this.post({ type: 'patch', layer, params: clean });
+  }
+  setParam(layer, id, value) { this.post({ type: 'param', layer, id, value }); }
+  setGlobal(id, value) { this.post({ type: 'global', id, value }); }
+  setPools(pools) { this.post({ type: 'pools', pools }); }
+  noteOn(note, velocity, layer) { this.post({ type: 'noteOn', note, velocity, layer }); }
+  noteOff(note, layer) { this.post({ type: 'noteOff', note, layer }); }
+  pressure(value) { this.post({ type: 'pressure', value }); }
+  allNotesOff() { this.post({ type: 'allNotesOff' }); }
+  panic() { this.post({ type: 'panic' }); }
+  autoTune() { this.post({ type: 'autoTune' }); }
+}
+
+// ---------------------------------------------------------------------------
+// Application
+// ---------------------------------------------------------------------------
+
+class App {
+  constructor() {
+    this.store = new Store();
+    this.engine = new Engine();
+    this.store.engine = this.engine;
+    this.store.app = this;
+
+    this.surface = new Surface(this.store);
+    this.store.surface = this.surface;
+
+    this.sounding = new Set();   // notes currently making sound
+    this.physical = new Set();   // keys physically down
+    this.heldByHold = new Set(); // notes latched by the HOLD button
+    this.chordNotes = null;      // captured chord for CHORD mode
+    this.arpNotes = [];
+    this.arpIndex = 0;
+    this.arpDir = 1;
+    this.arpTimer = null;
+    this.arpCurrent = null;
+    this.midiName = '';
+    this.octave = 0;
+  }
+
+  async boot() {
+    this.surface.build(
+      document.getElementById('control-surface'),
+      document.getElementById('perf-panel'),
+      document.getElementById('keybed'));
+
+    await this.engine.start();
+
+    // Push initial state to the DSP.
+    this.engine.sendPatch(0, this.store.live[0]);
+    this.engine.sendPatch(1, this.store.live[1]);
+    for (const key of ['masterVol', 'volBalance', 'masterTune', 'modDepth', 'bendRange', 'bendOsc2Only']) {
+      this.engine.setGlobal(key, this.store.g[key]);
+    }
+    this.engine.setGlobal('transpose', this.store.g.transposeUp ? 1 : this.store.g.transposeDown ? -1 : 0);
+    this.store.applyKeyboardMode();
+    this.store.syncProgLeds();
+    this.surface.refresh();
+    this.store.updateDisplay();
+
+    this.bindKeybed();
+    this.bindComputerKeyboard();
+    this.bindBender();
+    this.initMIDI();
+  }
+
+  // --- note handling -------------------------------------------------------
+
+  noteOn(note, velocity = 0.8, fromKeybed = false) {
+    if (note < 0 || note > 127) return;
+    if (this.store.armSplit && fromKeybed) {
+      this.store.splitNote = note;
+      this.store.armSplit = false;
+      this.store.flash(`SPLIT ${noteName(note)}`);
+      this.store.persist();
+      return;
+    }
+
+    this.physical.add(note);
+
+    if (this.store.g.chord && this.chordNotes && this.chordNotes.length) {
+      return this.playChord(note);
+    }
+    if (this.store.g.arpOn) {
+      this.arpAdd(note);
+      return;
+    }
+    this.sound(note, velocity);
+  }
+
+  noteOff(note) {
+    this.physical.delete(note);
+
+    if (this.store.g.chord && this.chordNotes && this.chordNotes.length) {
+      return this.releaseChord(note);
+    }
+    if (this.store.g.arpOn) {
+      this.arpRemove(note);
+      return;
+    }
+    if (this.store.g.hold) { this.heldByHold.add(note); return; }
+    this.unsound(note);
+  }
+
+  sound(note, velocity = 0.8) {
+    for (const layer of this.store.layersForNote(note)) this.engine.noteOn(note, velocity, layer);
+    this.sounding.add(note);
+    this.surface.setKeyDown(note, true);
+  }
+
+  unsound(note) {
+    for (const layer of this.store.layersForNote(note)) this.engine.noteOff(note, layer);
+    this.sounding.delete(note);
+    this.surface.setKeyDown(note, false);
+  }
+
+  releaseHeld() {
+    for (const n of [...this.heldByHold]) if (!this.physical.has(n)) this.unsound(n);
+    this.heldByHold.clear();
+  }
+
+  panic() {
+    for (const n of [...this.sounding]) this.surface.setKeyDown(n, false);
+    for (const n of this.arpNotes) this.surface.setKeyDown(n, false);
+    this.sounding.clear();
+    this.physical.clear();
+    this.heldByHold.clear();
+    this.chordVoices?.clear();
+    this.arpNotes = [];
+    this.arpCurrent = null;
+    clearTimeout(this.arpTimer);
+    this.arpTimer = null;
+    this.engine.panic();
+  }
+
+  // --- CHORD ("unison chord") ---------------------------------------------
+  // The manual builds this from HOLD + RESET: a held chord is captured, then
+  // each new key replays it transposed by that key's distance above the
+  // lowest note of the keyboard.
+  chordChanged(on) {
+    if (on) {
+      const held = [...this.sounding].sort((a, b) => a - b);
+      this.chordNotes = held.length ? held : null;
+      if (!this.chordNotes) this.store.flash('HOLD A CHORD');
+      else this.store.flash(`CHORD ${this.chordNotes.length} NOTES`);
+      for (const n of held) this.unsound(n);
+      this.heldByHold.clear();
+    } else {
+      this.chordNotes = null;
+      this.panic();
+    }
+  }
+
+  playChord(root) {
+    // "the chord previously held will sound, transposed by the amount that
+    //  the played note is above the lowest note on the keyboard"
+    const offset = root - KEY_RANGE.first;
+    this.chordVoices = this.chordVoices || new Map();
+    const transposed = this.chordNotes.map((n) => n + offset);
+    this.chordVoices.set(root, transposed);
+    for (const n of transposed) this.sound(n, 0.8);
+    this.surface.setKeyDown(root, true);
+  }
+
+  releaseChord(root) {
+    const transposed = this.chordVoices?.get(root);
+    if (!transposed) return;
+    this.chordVoices.delete(root);
+    if (this.store.g.hold) return;
+    for (const n of transposed) this.unsound(n);
+    this.surface.setKeyDown(root, false);
+  }
+
+  // --- arpeggiator ---------------------------------------------------------
+
+  arpChanged() {
+    if (!this.store.g.arpOn) {
+      this.stopArp();
+      if (!this.store.g.arpHold) this.arpNotes = [];
+      return;
+    }
+    this.startArp();
+  }
+
+  arpAdd(note) {
+    if (!this.arpNotes.includes(note)) this.arpNotes.push(note);
+    this.surface.setKeyDown(note, true);
+    this.startArp();
+  }
+
+  arpRemove(note) {
+    if (this.store.g.arpHold) return;
+    this.arpNotes = this.arpNotes.filter((n) => n !== note);
+    this.surface.setKeyDown(note, false);
+    if (!this.arpNotes.length) this.stopArp();
+  }
+
+  startArp() {
+    if (this.arpTimer || !this.store.g.arpOn) return;
+    const tick = () => {
+      const rate = 0.5 + this.store.g.arpRate * 15;
+      this.arpTimer = setTimeout(tick, 1000 / rate);
+      this.arpStep();
+    };
+    tick();
+  }
+
+  stopArp() {
+    clearTimeout(this.arpTimer);
+    this.arpTimer = null;
+    if (this.arpCurrent !== null) { this.unsound(this.arpCurrent); this.arpCurrent = null; }
+    for (const n of this.arpNotes) this.surface.setKeyDown(n, false);
+  }
+
+  arpStep() {
+    if (this.arpCurrent !== null) { this.unsound(this.arpCurrent); this.arpCurrent = null; }
+    if (!this.arpNotes.length) return;
+
+    const g = this.store.g;
+    let seq = [...this.arpNotes];
+    if (!g.arpKbd) seq.sort((a, b) => a - b);
+    if (g.arpUp && g.arpDown) {
+      // up then down, without repeating the turning points
+      const down = [...seq].reverse().slice(1, -1);
+      seq = seq.concat(down);
+    } else if (g.arpDown && !g.arpUp) {
+      seq.reverse();
+    }
+    this.arpIndex = (this.arpIndex + 1) % seq.length;
+    const note = seq[this.arpIndex];
+    this.sound(note, 0.9);
+    this.arpCurrent = note;
+  }
+
+  // --- input ---------------------------------------------------------------
+
+  bindKeybed() {
+    const keybed = document.getElementById('keybed');
+    const noteAt = (target) => {
+      const el = target?.closest?.('.key');
+      return el ? Number(el.dataset.note) : null;
+    };
+    let down = false;
+    let last = null;
+
+    keybed.addEventListener('pointerdown', (ev) => {
+      const n = noteAt(ev.target);
+      if (n === null) return;
+      ev.preventDefault();
+      keybed.setPointerCapture?.(ev.pointerId);
+      down = true; last = n;
+      this.noteOn(n, velocityFromEvent(ev, ev.target), true);
+    });
+    keybed.addEventListener('pointermove', (ev) => {
+      if (!down) return;
+      const n = noteAt(document.elementFromPoint(ev.clientX, ev.clientY));
+      if (n === null || n === last) return;
+      if (last !== null) this.noteOff(last);
+      last = n;
+      this.noteOn(n, 0.8, true);
+    });
+    const up = () => {
+      if (!down) return;
+      down = false;
+      if (last !== null) this.noteOff(last);
+      last = null;
+    };
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  }
+
+  bindComputerKeyboard() {
+    // Two rows of a piano keyboard, plus z / x to shift octave.
+    const MAP = {
+      KeyA: 0, KeyW: 1, KeyS: 2, KeyE: 3, KeyD: 4, KeyF: 5, KeyT: 6,
+      KeyG: 7, KeyY: 8, KeyH: 9, KeyU: 10, KeyJ: 11, KeyK: 12,
+      KeyO: 13, KeyL: 14, KeyP: 15, Semicolon: 16, Quote: 17,
+    };
+    const held = new Set();
+
+    window.addEventListener('keydown', (ev) => {
+      if (ev.target.matches?.('input, textarea')) return;
+      if (ev.code === 'KeyZ' && !ev.repeat) { this.octave = Math.max(-2, this.octave - 1); return; }
+      if (ev.code === 'KeyX' && !ev.repeat) { this.octave = Math.min(2, this.octave + 1); return; }
+      if (ev.code === 'Escape') { this.panic(); return; }
+      const off = MAP[ev.code];
+      if (off === undefined || ev.repeat || ev.metaKey || ev.ctrlKey) return;
+      ev.preventDefault();
+      const note = 60 + this.octave * 12 + off;
+      if (held.has(ev.code)) return;
+      held.add(ev.code);
+      this.noteOn(note, 0.85);
+    });
+
+    window.addEventListener('keyup', (ev) => {
+      const off = MAP[ev.code];
+      if (off === undefined || !held.has(ev.code)) return;
+      held.delete(ev.code);
+      this.noteOff(60 + this.octave * 12 + off);
+    });
+
+    window.addEventListener('blur', () => { held.clear(); this.panic(); });
+  }
+
+  bindBender() {
+    const bender = this.surface.bender;
+    const lever = this.surface.benderLever;
+    if (!bender || !lever) return;
+    let dragging = false;
+    let rect = null;
+
+    const apply = (ev) => {
+      const x = (ev.clientX - rect.left) / rect.width;
+      const y = (ev.clientY - rect.top) / rect.height;
+      const bend = Math.max(-1, Math.min(1, (x - 0.5) * 2.2));
+      const mod = Math.max(0, Math.min(1, 1 - y));
+      this.engine.setGlobal('bend', bend);
+      this.store.g.modDepth = mod;
+      this.engine.setGlobal('modDepth', mod);
+      this.surface.renderOne('g:modDepth');
+      lever.style.transform = `translate(${bend * 26}%, ${(1 - mod) * 18 - 9}%) rotate(${bend * 6}deg)`;
+    };
+
+    lever.addEventListener('pointerdown', (ev) => {
+      dragging = true;
+      rect = bender.getBoundingClientRect();
+      lever.setPointerCapture(ev.pointerId);
+      apply(ev);
+    });
+    lever.addEventListener('pointermove', (ev) => { if (dragging) apply(ev); });
+    const release = () => {
+      if (!dragging) return;
+      dragging = false;
+      // The pitch lever is spring-loaded back to centre; the mod amount stays.
+      this.engine.setGlobal('bend', 0);
+      const mod = this.store.g.modDepth;
+      lever.style.transform = `translate(0%, ${(1 - mod) * 18 - 9}%)`;
+    };
+    lever.addEventListener('pointerup', release);
+    lever.addEventListener('pointercancel', release);
+  }
+
+  /** Overridable so tests can drive the reset without a modal. */
+  confirmReset() {
+    return window.confirm('Restore all 64 programs to the factory bank? Any programs you have written will be lost.');
+  }
+
+  async initMIDI() {
+    if (!navigator.requestMIDIAccess) return;
+    let access;
+    try { access = await navigator.requestMIDIAccess(); } catch { return; }
+
+    const attach = (input) => {
+      input.onmidimessage = (ev) => this.onMIDI(ev.data);
+      this.midiName = input.name || 'MIDI in';
+      this.store.updateDisplay();
+    };
+    for (const input of access.inputs.values()) attach(input);
+    access.onstatechange = (ev) => {
+      if (ev.port.type === 'input' && ev.port.state === 'connected') attach(ev.port);
+    };
+  }
+
+  onMIDI(data) {
+    const status = data[0] & 0xf0;
+    if (status === 0x90 && data[2] > 0) this.noteOn(data[1], data[2] / 127);
+    else if (status === 0x80 || (status === 0x90 && data[2] === 0)) this.noteOff(data[1]);
+    else if (status === 0xd0) this.engine.pressure(data[1] / 127);
+    else if (status === 0xa0) this.engine.pressure(data[2] / 127);
+    else if (status === 0xe0) {
+      const value = ((data[2] << 7) | data[1]) / 8192 - 1;
+      this.engine.setGlobal('bend', value);
+    } else if (status === 0xb0) {
+      if (data[1] === 1) { // mod wheel
+        this.store.g.modDepth = data[2] / 127;
+        this.engine.setGlobal('modDepth', this.store.g.modDepth);
+        this.surface.renderOne('g:modDepth');
+      } else if (data[1] === 123 || data[1] === 120) {
+        this.panic();
+      }
+    }
+  }
+}
+
+function velocityFromEvent(ev, target) {
+  // Striking lower down a key gives a higher velocity, like a real keybed.
+  const el = target?.closest?.('.key');
+  if (!el) return 0.8;
+  const r = el.getBoundingClientRect();
+  const y = (ev.clientY - r.top) / r.height;
+  return Math.max(0.15, Math.min(1, 0.35 + y * 0.75));
+}
+
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+function noteName(n) { return `${NOTE_NAMES[n % 12]}${Math.floor(n / 12) - 1}`; }
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+
+const app = new App();
+window.obx = app; // handy for debugging and for the headless smoke test
+
+const bootBtn = document.getElementById('boot-btn');
+bootBtn?.addEventListener('click', async () => {
+  bootBtn.disabled = true;
+  bootBtn.textContent = 'Tuning…';
+  try {
+    await app.boot();
+    document.getElementById('boot').hidden = true;
+    document.getElementById('obx').hidden = false;
+  } catch (err) {
+    bootBtn.disabled = false;
+    bootBtn.textContent = 'Power On';
+    console.error(err);
+    alert(`Could not start the audio engine: ${err.message}`);
+  }
+});
+
+
+</script>
+</body>
+</html>

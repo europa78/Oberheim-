@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "python3 serve.py --open",
-    "test": "node test/smoke.mjs && node test/dsp.mjs && node test/alias.mjs && node test/interact.mjs"
+    "test": "node test/smoke.mjs && node test/dsp.mjs && node test/alias.mjs && node test/interact.mjs && node test/bundle.mjs",
+    "build": "node build.mjs"
   },
   "devDependencies": {
     "playwright": "^1.56.0"
