@@ -158,6 +158,18 @@ class Store {
         break;
 
       case 'write':
+        // With GLOBAL lit, WRITE restores the factory bank instead of arming
+        // a store — the only way back once all 64 slots have been written.
+        if (this.g.global) {
+          if (this.app?.confirmReset()) {
+            this.factoryReset();
+            this.g.global = 0;
+            this.flash('FACTORY RESTORED');
+          }
+          this.g.write = 0;
+          this.writeArmed = false;
+          break;
+        }
         this.writeArmed = !this.writeArmed;
         this.g.write = this.writeArmed ? 1 : 0;
         this.updateDisplay();
@@ -288,7 +300,7 @@ class Store {
     const sel = this.sel[this.editLayer];
     let name = this._flash;
     if (!name) {
-      if (this.g.global) name = `${this.app?.midiName || 'No MIDI in'}`;
+      if (this.g.global) name = `${this.app?.midiName || 'No MIDI in'} · WRITE=reset`;
       else if (this.mode === 'manual') name = 'Manual Panel';
       else name = this.live[this.editLayer].name || 'Program';
     }
@@ -351,7 +363,11 @@ class Store {
     this.bank = this.buildBank();
     this.sel = [{ page: 0, group: 0, prog: 0 }, { page: 0, group: 1, prog: 0 }];
     this.editLayer = 0;
+    this.g.page2 = 0;
+    this.mode = 'program';
+    this.g.manual = 0;
     this.recallCurrent();
+    this.syncProgLeds();
     this.persist();
   }
 }
@@ -724,6 +740,11 @@ class App {
     };
     lever.addEventListener('pointerup', release);
     lever.addEventListener('pointercancel', release);
+  }
+
+  /** Overridable so tests can drive the reset without a modal. */
+  confirmReset() {
+    return window.confirm('Restore all 64 programs to the factory bank? Any programs you have written will be lost.');
   }
 
   async initMIDI() {

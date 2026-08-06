@@ -166,7 +166,27 @@ await page.evaluate(()=>window.obx.store.persist());
 await page.waitForTimeout(600);
 checks.push(['state persisted', await page.evaluate(()=>!!localStorage.getItem('obx.state.v2'))]);
 
-// 16. transpose is exclusive
+// 16. GLOBAL + WRITE restores the factory bank
+checks.push(['global+write restores factory', await page.evaluate(() => {
+  const a = window.obx;
+  a.confirmReset = () => true;                 // stand in for the modal
+  a.store.set('g:group', 0);                   // group A
+  a.store.set('g:prog1', 1);                   // select A1
+  const slot = a.store.slotIndex(a.store.sel[a.store.editLayer]);
+  a.store.set('cutoff', 0.123);                // edit it
+  a.store.set('g:write', 1);                   // arm
+  a.store.set('g:prog1', 1);                   // store the edit
+  const stored = a.store.bank[slot].cutoff;
+  a.store.set('g:global', 1);
+  a.store.set('g:write', 1);                   // GLOBAL lit -> reset
+  return Math.abs(stored - 0.123) < 1e-9
+      && Math.abs(a.store.bank[slot].cutoff - 0.123) > 1e-6
+      && a.store.g.global === 0;
+})]);
+checks.push(['reset does not arm a write', await page.evaluate(() =>
+  window.obx.store.writeArmed === false && window.obx.store.g.write === 0)]);
+
+// 17. transpose is exclusive
 await q('.perf-panel [data-param="g:transposeUp"] .rocker').click();
 await q('.perf-panel [data-param="g:transposeDown"] .rocker').click();
 checks.push(['transpose exclusive', await page.evaluate(()=>window.obx.store.g.transposeUp===0&&window.obx.store.g.transposeDown===1)]);

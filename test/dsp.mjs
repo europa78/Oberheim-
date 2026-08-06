@@ -99,7 +99,20 @@ const out = await page.evaluate(async () => {
     res.sync_puts_energy_at_440_dB = +db(mag(sync, 440), mag(plain, 440)).toFixed(1);
   }
 
-  // 8. Envelope shape: a long attack must start quiet and grow.
+  // 8. A narrow pulse must not carry a DC offset into the amplifier.
+  {
+    const dcOf = async (pw) => {
+      const x = await render({ vintage: 0, aSustain: 1, cutoff: 1, kbdTrack: 0,
+        osc1Saw: 0, osc1Pulse: 1, pulseWidth: pw, osc2Saw: 0, osc2Pulse: 0 }, 57, 1.0);
+      let s = 0; const a = Math.floor(x.length * 0.5);
+      for (let i = a; i < x.length; i++) s += x[i];
+      return s / (x.length - a);
+    };
+    res.narrowPulseDC = +Math.abs(await dcOf(1)).toFixed(5);
+    res.squareDC = +Math.abs(await dcOf(0)).toFixed(5);
+  }
+
+  // 9. Envelope shape: a long attack must start quiet and grow.
   {
     const x = await render({ vintage: 0, aAttack: 0.55, aSustain: 1, cutoff: 1, kbdTrack: 0, osc2Saw: 0, osc2Pulse: 0 }, 69, 1.0);
     const rms = (a, b) => { let s = 0; for (let i = a; i < b; i++) s += x[i] * x[i]; return Math.sqrt(s / (b - a)); };
@@ -124,6 +137,8 @@ const EXPECT = [
   ['filter never self-oscillates',         out.selfOscillationPeak,  0,   1e-4],
   ['osc 2 at +12 sounds an octave up',     out.osc2OctaveUp_880_over_440_dB, 20, Infinity],
   ['sync adds the master fundamental',     out.sync_puts_energy_at_440_dB,   20, Infinity],
+  ['narrow pulse carries no DC',           out.narrowPulseDC,        0,   0.001],
+  ['50% square carries no DC',             out.squareDC,             0,   0.001],
   ['long attack starts quiet',             out.attackEarly,          0,   0.012],
   ['long attack grows',                    out.attackLate,        0.02,   1],
 ];

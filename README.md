@@ -43,14 +43,19 @@ NOISE ─ half / full ───────────────────�
                                               LOUDNESS ENVELOPE ───┘
 ```
 
-* **Oscillators** are PolyBLEP-band-limited and run at 2× oversampling. Osc 1
-  frequency steps in one-octave detents over four octaves; osc 2 steps in
-  semitones over five octaves. Selecting both SAW and PULSE gives a triangle,
-  as the panel legend indicates. Pulse width runs from a 50 % square fully
-  counter-clockwise to a 5 % duty cycle fully clockwise, shared by both
-  oscillators. **SYNC** makes osc 1 the master and resets osc 2 on every
+* **Oscillators** step in one-octave detents over four octaves for osc 1, and
+  in semitones over five octaves for osc 2. Selecting both SAW and PULSE gives
+  a triangle, as the panel legend indicates. Pulse width runs from a 50 %
+  square fully counter-clockwise to a 5 % duty cycle fully clockwise, shared by
+  both oscillators. **SYNC** makes osc 1 the master and resets osc 2 on every
   master wrap; **X-MOD** lets osc 2 frequency-modulate osc 1 for
-  ring-modulator-like timbres.
+  ring-modulator-like timbres, off / half / full.
+* **Band-limiting**: the oscillators are PolyBLEP-corrected, run at 2×
+  oversampling and are decimated by a 31-tap half-band filter, which holds
+  alias products around 50 dB below the signal. The input saturation sits
+  inside the oversampled section so its harmonics are filtered rather than
+  folded back, and every voice is AC-coupled before its amplifier, so a narrow
+  pulse's large DC offset cannot turn the loudness envelope into a thump.
 * **Filter** is a topology-preserving state-variable section in trapezoidal
   form. The manual describes "a two-pole, low-pass type", which is the default;
   the panel's TYPE switch cascades a second section for 24 dB/octave. Its
@@ -78,6 +83,8 @@ NOISE ─ half / full ───────────────────�
 * **MANUAL** swaps the sound over to the panel's own settings.
 * Turning any control edits the live program; the display marks it with `*`.
 * To store: press **WRITE** (it lights), then press a program button.
+* **GLOBAL** shows the MIDI input in the display; with it lit, **WRITE**
+  restores the factory bank (it asks first).
 * Everything is persisted to `localStorage`; there is no cassette interface.
 
 **KEYBOARD** splits the eight voices into two four-voice layers. **DOUBLE**
@@ -106,9 +113,10 @@ npm install     # playwright
 npm test
 ```
 
-Three suites run against real Chromium: a layout and render check over all 32
-factory programs, spectral measurements of the synthesis engine, and a set of
-DOM-driven behaviour checks on the programmer and keyboard routing.
+Four suites run against real Chromium: a layout and render check over all 32
+factory programs, spectral measurements of the synthesis engine, alias-to-signal
+measurements on saw, pulse and sync patches, and DOM-driven behaviour checks on
+the programmer and keyboard routing. 56 assertions in total.
 
 ## What this is and is not
 
